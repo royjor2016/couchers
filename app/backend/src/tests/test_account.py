@@ -9,7 +9,13 @@ from sqlalchemy.sql import func
 from couchers import errors
 from couchers.crypto import hash_password, random_hex
 from couchers.db import session_scope
-from couchers.models import AccountDeletionReason, AccountDeletionToken, BackgroundJob, Upload, User
+from couchers.models import (
+    AccountDeletionReason,
+    AccountDeletionToken,
+    BackgroundJob,
+    Upload,
+    User,
+)
 from couchers.sql import couchers_select as select
 from couchers.utils import now
 from proto import account_pb2, api_pb2, auth_pb2
@@ -45,6 +51,7 @@ def test_GetAccountInfo(db, fast_passwords):
         assert res.birthdate_verification_status == api_pb2.BIRTHDATE_VERIFICATION_STATUS_UNVERIFIED
         assert res.gender_verification_status == api_pb2.GENDER_VERIFICATION_STATUS_UNVERIFIED
         assert not res.is_superuser
+        assert res.ui_language_preference == ""
 
 
 def test_GetAccountInfo_regression(db):
@@ -525,6 +532,34 @@ def test_ChangeEmailV2_sends_proper_emails(db, fast_passwords, push_collector):
         title="An email change was initiated on your account",
         body=f"An email change to the email {new_email} was initiated on your account.",
     )
+
+
+def test_ChangeLanguagePreference(db, fast_passwords):
+    # user changes from default to ISO 639-1 language code
+    newLanguageCode = "zh"
+    user, token = generate_user()
+
+    with real_account_session(token) as account:
+        res = account.GetAccountInfo(empty_pb2.Empty())
+        assert res.ui_language_preference == ""
+
+        request = account_pb2.ChangeLanguagePreferenceReq(ui_language_preference=newLanguageCode)
+
+        # call will have info about the request
+        res, call = account.ChangeLanguagePreference.with_call(request)
+
+        # cookies are sent via initial metadata, so we check for it there
+        metadata = dict(call.initial_metadata())
+
+        assert "set-cookie" in metadata, "expected 'set-cookie' in initial metadata"
+
+        # the value of "set-cookie" will be the full cookie string, pull the key value from the string
+        key_val = metadata["set-cookie"].split(";")[0]
+        assert key_val == "couchers-preferred-language=zh", f"expected 'couchers-preferred-language=zh', got {key_val}"
+
+        # the changed language preference should also be sent to the backend
+        res = account.GetAccountInfo(empty_pb2.Empty())
+        assert res.ui_language_preference == "zh"
 
 
 def test_contributor_form(db):

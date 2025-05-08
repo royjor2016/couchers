@@ -19,6 +19,7 @@ jest.mock("@mui/x-date-pickers", () => {
   return {
     ...jest.requireActual("@mui/x-date-pickers"),
     DatePicker: jest.requireActual("@mui/x-date-pickers").DesktopDatePicker,
+    TimePicker: jest.requireActual("@mui/x-date-pickers").DesktopTimePicker,
   };
 });
 
@@ -43,6 +44,7 @@ const accountInfo = {
   doNotEmail: false,
   hasDonated: false,
   isSuperuser: false,
+  uiLanguagePreference: "",
 };
 
 describe("Create event page", () => {
@@ -95,10 +97,10 @@ describe("Create event page", () => {
       t("communities:start_time"),
     )) as HTMLInputElement;
 
-    user.type(startTimeField, "01:00");
+    user.type(startTimeField, "01:00 AM");
 
     await waitFor(() => {
-      expect(startTimeField).toHaveValue("01:00");
+      expect(startTimeField).toHaveValue("01:00 AM");
     });
 
     const endDateField = (await screen.findByLabelText(
@@ -115,9 +117,9 @@ describe("Create event page", () => {
       t("communities:end_time"),
     ) as HTMLInputElement;
 
-    user.type(endTimeField, "02:00");
+    user.type(endTimeField, "02:00 AM");
 
-    await waitFor(() => expect(endTimeField).toHaveValue("02:00"));
+    await waitFor(() => expect(endTimeField).toHaveValue("02:00 AM"));
 
     const virtualEventCheckBox = screen.getByLabelText(
       t("communities:virtual_event"),
@@ -169,8 +171,8 @@ describe("Create event page", () => {
       title: "Test event",
       content: "sick social!",
       photoKey: "",
-      startTime: new Date("2021-08-01 01:00"),
-      endTime: new Date("2021-08-01 02:00"),
+      startTime: new Date("2021-08-01 01:00 AM"),
+      endTime: new Date("2021-08-01 02:00 AM"),
       parentCommunityId: 1,
       link: "https://couchers.org/social",
     });
@@ -209,10 +211,10 @@ describe("Create event page", () => {
       t("communities:start_time"),
     )) as HTMLInputElement;
 
-    user.type(startTimeField, "01:00");
+    user.type(startTimeField, "01:00 AM");
 
     await waitFor(() => {
-      expect(startTimeField).toHaveValue("01:00");
+      expect(startTimeField).toHaveValue("01:00 AM");
     });
 
     const endDateField = (await screen.findByLabelText(
@@ -229,9 +231,9 @@ describe("Create event page", () => {
       t("communities:end_time"),
     ) as HTMLInputElement;
 
-    user.type(endTimeField, "02:00");
+    user.type(endTimeField, "02:00 AM");
 
-    await waitFor(() => expect(endTimeField).toHaveValue("02:00"));
+    await waitFor(() => expect(endTimeField).toHaveValue("02:00 AM"));
 
     // msw server response doesn't work with fake timers on, so turn it off temporarily
     jest.useRealTimers();
@@ -280,8 +282,8 @@ describe("Create event page", () => {
       title: "Test event",
       content: "sick social!",
       photoKey: "",
-      startTime: new Date("2021-08-01 01:00"),
-      endTime: new Date("2021-08-01 02:00"),
+      startTime: new Date("2021-08-01 01:00 AM"),
+      endTime: new Date("2021-08-01 02:00 AM"),
     });
   });
 
@@ -315,10 +317,10 @@ describe("Create event page", () => {
       t("communities:start_time"),
     )) as HTMLInputElement;
 
-    user.type(startTimeField, "01:00");
+    user.type(startTimeField, "01:00 AM");
 
     await waitFor(() => {
-      expect(startTimeField).toHaveValue("01:00");
+      expect(startTimeField).toHaveValue("01:00 AM");
     });
 
     const endDateField = (await screen.findByLabelText(
@@ -335,9 +337,9 @@ describe("Create event page", () => {
       t("communities:end_time"),
     ) as HTMLInputElement;
 
-    user.type(endTimeField, "02:00");
+    user.type(endTimeField, "02:00 AM");
 
-    await waitFor(() => expect(endTimeField).toHaveValue("02:00"));
+    await waitFor(() => expect(endTimeField).toHaveValue("02:00 AM"));
 
     jest.useRealTimers();
 
@@ -383,8 +385,8 @@ describe("Create event page", () => {
       title: "Test event",
       content: "sick social!",
       photoKey: "",
-      startTime: new Date("2021-08-01 01:00"),
-      endTime: new Date("2021-08-01 02:00"),
+      startTime: new Date("2021-08-01 01:00 AM"),
+      endTime: new Date("2021-08-01 02:00 AM"),
       parentCommunityId: 99,
     });
   });
@@ -403,6 +405,7 @@ describe("Create event page", () => {
       doNotEmail: false,
       hasDonated: false,
       isSuperuser: false,
+      uiLanguagePreference: "",
     });
 
     render(<CreateEventPage />, { wrapper });

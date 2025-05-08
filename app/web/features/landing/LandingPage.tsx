@@ -1,4 +1,5 @@
 import {
+  Box,
   Button as MuiButton,
   Container,
   ContainerProps,
@@ -23,7 +24,6 @@ import { useRouter } from "next/router";
 import { Trans, useTranslation } from "next-i18next";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "react-query";
-import vercelLogo from "resources/vercel.svg";
 import { theme } from "theme";
 
 import {
@@ -54,6 +54,9 @@ const StyledSection = styled("section")(({ theme }) => ({
 }));
 
 const StyledContent = styled("div")(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
   width: "100%",
   marginBottom: theme.spacing(2),
   [theme.breakpoints.up("md")]: {
@@ -66,18 +69,6 @@ const StyledContent = styled("div")(({ theme }) => ({
   },
 }));
 
-const StyledVercelLink = styled("a")(({ theme }) => ({
-  marginTop: theme.spacing(2),
-  [theme.breakpoints.up("md")]: {
-    position: "absolute",
-    right: theme.spacing(2),
-    bottom: theme.spacing(2),
-    "& img": { height: "2.5rem" },
-  },
-  textAlign: "center",
-  "& img": { height: "2rem" },
-}));
-
 const StyledIntroduction = styled("div")(({ theme }) => ({
   flexShrink: 0,
   color: theme.palette.common.white,
@@ -87,6 +78,10 @@ const StyledIntroduction = styled("div")(({ theme }) => ({
   width: "45%",
   maxWidth: theme.breakpoints.values.lg / 2,
   marginInlineEnd: "10%",
+  gap: theme.spacing(2),
+}));
+
+const StyledIntroductionText = styled("div")(({ theme }) => ({
   [theme.breakpoints.down("md")]: {
     display: "none",
   },
@@ -204,40 +199,74 @@ export default function LandingPage() {
       <StyledSection>
         <StyledContent>
           <StyledIntroduction>
-            <Typography
-              variant="h1"
-              component="h1"
-              sx={{
-                [theme.breakpoints.up("md")]: {
-                  fontSize: "2rem",
-                  lineHeight: "1.15",
-                  textAlign: "left",
-                },
-              }}
+            <StyledIntroductionText>
+              <Typography
+                variant="h1"
+                component="h1"
+                sx={{
+                  [theme.breakpoints.up("md")]: {
+                    fontSize: "2rem",
+                    lineHeight: "1.15",
+                    textAlign: "left",
+                  },
+                }}
+              >
+                {t("landing:introduction_title")}
+              </Typography>
+              <Typography
+                variant="h2"
+                component="span"
+                sx={{
+                  [theme.breakpoints.up("md")]: {
+                    display: "inline-block",
+                    marginTop: theme.spacing(4),
+                    position: "relative",
+                  },
+                }}
+              >
+                {t("landing:introduction_subtitle")}
+                <StyledDivider />
+              </Typography>
+            </StyledIntroductionText>
+            <Box
+              display={{ xs: "none", md: "flex" }}
+              flexDirection="column"
+              width="100%"
+              mt={2}
             >
-              {t("landing:introduction_title")}
-            </Typography>
-            <Typography
-              variant="h2"
-              component="span"
-              sx={{
-                [theme.breakpoints.up("md")]: {
-                  display: "inline-block",
-                  marginTop: theme.spacing(4),
-                  position: "relative",
-                },
-              }}
-            >
-              {t("landing:introduction_subtitle")}
-              <StyledDivider />
-            </Typography>
+              <MuiButton
+                onClick={scrollToMore}
+                variant="text"
+                size="medium"
+                sx={{
+                  "&.MuiButtonBase-root:hover": {
+                    bgcolor: "transparent",
+                  },
+                  color: theme.palette.common.white,
+                }}
+              >
+                {t("global:read_more")}
+              </MuiButton>
+              <IconButton
+                onClick={scrollToMore}
+                size="small"
+                sx={{
+                  "&.MuiButtonBase-root:hover": {
+                    bgcolor: "transparent",
+                  },
+                  color: theme.palette.common.white,
+                }}
+              >
+                <ExpandMoreIcon fontSize="large" />
+              </IconButton>
+            </Box>
           </StyledIntroduction>
           <StyledFormWrapper>
             <Typography variant="h2" component="h3">
               {t("landing:signup_header")}
             </Typography>
             <Typography variant="body2" paragraph gutterBottom>
-              {t("landing:signup_description", { user_count: "40k" })}
+              {t("landing:signup_description", { user_count: "50k" })}
             </Typography>
             {!flowState || !isMounted ? (
               <BasicForm
@@ -271,38 +300,39 @@ export default function LandingPage() {
               </Trans>
             </Typography>
           </StyledFormWrapper>
-        </StyledContent>
-
-        <MuiButton
-          onClick={scrollToMore}
-          variant="text"
-          sx={{
-            color: theme.palette.common.white,
-            background: "none",
-            border: "none",
-          }}
-        >
-          Read more
-        </MuiButton>
-        <IconButton
-          onClick={scrollToMore}
-          size="small"
-          sx={{
-            color: theme.palette.common.white,
-            background: "none",
-            border: "none",
-          }}
-        >
-          <ExpandMoreIcon />
-        </IconButton>
-        {process.env.NEXT_PUBLIC_COUCHERS_ENV !== "prod" && (
-          <StyledVercelLink
-            rel="noopener noreferrer"
-            href="https://vercel.com?utm_source=couchers-org&utm_campaign=oss"
+          <Box
+            display={{ xs: "flex", md: "none" }}
+            flexDirection="column"
+            width="100%"
+            mt={2}
           >
-            <img alt="Powered by Vercel" src={vercelLogo.src} />
-          </StyledVercelLink>
-        )}
+            <MuiButton
+              onClick={scrollToMore}
+              variant="text"
+              sx={{
+                color: theme.palette.common.white,
+                "&.MuiButtonBase-root:hover": {
+                  bgcolor: "transparent",
+                },
+              }}
+              disableRipple
+            >
+              {t("global:read_more")}
+            </MuiButton>
+            <IconButton
+              onClick={scrollToMore}
+              size="small"
+              sx={{
+                color: theme.palette.common.white,
+                "&.MuiButtonBase-root:hover": {
+                  bgcolor: "transparent",
+                },
+              }}
+            >
+              <ExpandMoreIcon />
+            </IconButton>
+          </Box>
+        </StyledContent>
       </StyledSection>
       <StyledSpacer />
       <Container component="section" maxWidth="md">
@@ -367,7 +397,12 @@ export default function LandingPage() {
         </StyledHeader>
       </Container>
       <StyledContainer component="section" maxWidth="lg">
-        <Grid container gap={3} justifyContent="center" alignItems="stretch">
+        <Grid
+          container
+          spacing={3}
+          justifyContent="center"
+          alignItems="stretch"
+        >
           <Grid item xs={12} md={4}>
             <StyledGovernanceTile>
               <Typography variant="subtitle1">Issue:</Typography>

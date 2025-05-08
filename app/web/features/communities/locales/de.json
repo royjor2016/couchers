@@ -92,7 +92,7 @@
   "load_more_attendees": "Weitere Teilnehmende laden",
   "load_more_organizers": "Weitere Organisatoren laden",
   "no_attendees": "Es nimmt noch niemand an diesem Event teil!",
-  "location": "Ort",
+  "location": "Standort",
   "location_required": "Bitte gib einen Ort für das Event an.",
   "no_organizers": "Es gibt keine Organisatoren für dieses Event.",
   "organizers": "Organisatoren",
@@ -128,5 +128,8 @@
   "created_by_me": "Von mir erstellt",
   "my_communities": "Meine Communities",
   "create_new_event": "Neues Event erstellen",
-  "fill_out_comment": "Du musst erst etwas schreiben!"
+  "fill_out_comment": "Du musst erst etwas schreiben!",
+  "members_empty_state": "Zurzeit keine Mitglieder.",
+  "members_label": "Mitglieder",
+  "members_title": "Community-Mitglieder"
 }

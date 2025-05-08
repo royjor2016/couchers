@@ -11,6 +11,8 @@ export const baseRoute = "/";
 
 export const githubURL = "https://github.com/Couchers-org/couchers";
 export const helpCenterURL = "https://help.couchers.org";
+export const githubUpdatesURL =
+  "https://github.com/Couchers-org/couchers/commits/develop";
 
 export const dashboardRoute = "/dashboard";
 export const blogRoute = "/blog";
@@ -22,6 +24,7 @@ export const teamRoute = "/team";
 export const donationsRoute = "/donate";
 export const builtWithRoute = "/open-source";
 export const contactRoute = "/contact";
+export const roadmapRoute = "/roadmap";
 
 export const loginRoute = "/login";
 export const resetPasswordRoute = "/password-reset";
@@ -106,6 +109,7 @@ export const referenceStepStrings = [
 export type ReferenceStep = (typeof referenceStepStrings)[number];
 
 export const eventsRoute = "/events";
+export const communitiesRoute = "/communities";
 export const logoutRoute = "/logout";
 export const connectionsRoute = "/connections";
 export const friendsRoute = `${connectionsRoute}/friends`;
@@ -150,6 +154,7 @@ export const communityTabs = [
   "info",
   "discussions",
   "events",
+  "members",
 ] as const;
 export type CommunityTab = (typeof communityTabs)[number];
 
@@ -186,3 +191,6 @@ export const howToMakeGreatProfileUrl =
   "https://help.couchers.org/hc/couchersorg-help-center/articles/1725919197-how-do-i-create-a-great-profile";
 export const helpCenterReportContentURL =
   "https://help.couchers.org/hc/couchersorg-help-center/articles/1715125657-how-do-i-report-someone-or-something-that-violates-the-community-guidelines-or-terms-of-use-to_u";
+
+export const latestFinancialsURL =
+  "/blog/2025/04/20/couchers-inc-financials-2024";

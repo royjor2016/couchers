@@ -170,9 +170,6 @@
     "field_label": "A tua localização",
     "validation_error": "Por favor seleciona uma localização válida."
   },
-  "notification_settings": {
-    "title": "Definições de notificação"
-  },
   "change_phone": {
     "phone_label": "Teu número de telefone",
     "change_to_different_description": "Para alterar o teu número de telefone para um diferente, digita-o abaixo.",
@@ -210,6 +207,5 @@
   "reset_password": "Redefinir palavra-passe",
   "about_us": "Sobre nós",
   "unhandled_sign_up_state": "Erro: unhandled signup flow state.",
-  "introduction_subtitle": "Grátis para sempre. Gerido pela comunidade. Sem fins lucrativos. Moderno.",
-  "vercel_logo_alt_text": "Desenvolvido por Vercel"
+  "introduction_subtitle": "Grátis para sempre. Gerido pela comunidade. Sem fins lucrativos. Moderno."
 }

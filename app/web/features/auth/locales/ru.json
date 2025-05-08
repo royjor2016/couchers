@@ -144,9 +144,6 @@
       "explanation": "Имя пользователя задается при создании аккаунта."
     }
   },
-  "notification_settings": {
-    "title": "Настройки уведомлений"
-  },
   "introduction_subtitle": "Бесплатно навсегда. Управляется сообществом. Некоммерческий. Современный.",
   "feedback_form": {
     "header": "Выскажите свое мнение"
@@ -208,6 +205,5 @@
     },
     "missing_token": "Ошибка: missing token"
   },
-  "vercel_logo_alt_text": "Работает на Vercel",
   "introduction_title": "Присоединяйтесь — и помогите развить новую альтернативу Couchsurfing™"
 }

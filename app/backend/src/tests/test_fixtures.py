@@ -2,7 +2,7 @@ import os
 from concurrent import futures
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -16,7 +16,12 @@ from couchers.constants import GUIDELINES_VERSION, TOS_VERSION
 from couchers.crypto import random_hex
 from couchers.db import _get_base_engine, session_scope
 from couchers.descriptor_pool import get_descriptor_pool
-from couchers.interceptors import AuthValidatorInterceptor, SessionInterceptor, _try_get_and_update_user_details
+from couchers.interceptors import (
+    AuthValidatorInterceptor,
+    CookieInterceptor,
+    SessionInterceptor,
+    _try_get_and_update_user_details,
+)
 from couchers.jobs.worker import process_job
 from couchers.models import (
     Base,
@@ -27,9 +32,12 @@ from couchers.models import (
     LanguageAbility,
     LanguageFluency,
     MeetupStatus,
+    PassportSex,
     Region,
     RegionLived,
     RegionVisited,
+    StrongVerificationAttempt,
+    StrongVerificationAttemptStatus,
     Upload,
     User,
     UserBlock,
@@ -228,7 +236,7 @@ def db():
     recreate_database()
 
 
-def generate_user(*, delete_user=False, complete_profile=True, **kwargs):
+def generate_user(*, delete_user=False, complete_profile=True, strong_verification=False, **kwargs):
     """
     Create a new user, return session token
 
@@ -254,7 +262,7 @@ def generate_user(*, delete_user=False, complete_profile=True, **kwargs):
             "hometown": "Test hometown",
             "community_standing": 0.5,
             "birthdate": date(year=2000, month=1, day=1),
-            "gender": "N/A",
+            "gender": "Woman",
             "pronouns": "",
             "occupation": "Tester",
             "education": "UST(esting)",
@@ -318,6 +326,28 @@ def generate_user(*, delete_user=False, complete_profile=True, **kwargs):
             session.flush()
             user.avatar_key = key
             user.about_me = "I have a complete profile!\n" * 20
+
+        if strong_verification:
+            attempt = StrongVerificationAttempt(
+                verification_attempt_token=f"verification_attempt_token_{user.id}",
+                user_id=user.id,
+                status=StrongVerificationAttemptStatus.succeeded,
+                has_full_data=True,
+                passport_encrypted_data=b"not real",
+                passport_date_of_birth=user.birthdate,
+                passport_sex={"Woman": PassportSex.female, "Man": PassportSex.male}.get(
+                    user.gender, PassportSex.unspecified
+                ),
+                has_minimal_data=True,
+                passport_expiry_date=date.today() + timedelta(days=10),
+                passport_nationality="UTO",
+                passport_last_three_document_chars=f"{user.id:03}",
+                iris_token=f"iris_token_{user.id}",
+                iris_session_id=user.id,
+            )
+            session.add(attempt)
+            session.flush()
+            assert attempt.has_strong_verification(user)
 
         session.commit()
 
@@ -487,7 +517,9 @@ def real_account_session(token):
     Create a Account service for testing, using TCP sockets, uses the token for auth
     """
     with futures.ThreadPoolExecutor(1) as executor:
-        server = grpc.server(executor, interceptors=[AuthValidatorInterceptor(), SessionInterceptor()])
+        server = grpc.server(
+            executor, interceptors=[AuthValidatorInterceptor(), CookieInterceptor(), SessionInterceptor()]
+        )
         port = server.add_secure_port("localhost:0", grpc.local_server_credentials())
         account_pb2_grpc.add_AccountServicer_to_server(Account(), server)
         server.start()
@@ -605,7 +637,7 @@ class FakeChannel:
 
 def fake_channel(token=None):
     if token:
-        user_id, is_jailed, is_superuser, token_expiry = _try_get_and_update_user_details(
+        user_id, is_jailed, is_superuser, token_expiry, ui_language_preference = _try_get_and_update_user_details(
             token, is_api_key=False, ip_address="127.0.0.1", user_agent="Testing User-Agent"
         )
         return FakeChannel(user_id=user_id, is_jailed=is_jailed, is_superuser=is_superuser, token_expiry=token_expiry)
@@ -874,6 +906,8 @@ def testconfig():
     config["PUSH_NOTIFICATIONS_ENABLED"] = True
     config["PUSH_NOTIFICATIONS_VAPID_PRIVATE_KEY"] = "uI1DCR4G1AdlmMlPfRLemMxrz9f3h4kvjfnI8K9WsVI"
     config["PUSH_NOTIFICATIONS_VAPID_SUBJECT"] = "mailto:testing@couchers.org.invalid"
+
+    config["ACTIVENESS_PROBES_ENABLED"] = True
 
     yield None
 

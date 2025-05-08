@@ -7,13 +7,14 @@ import Landscape from "features/donations/resources/landscape.jpeg";
 import { DONATIONS, GLOBAL } from "i18n/namespaces";
 import { Trans, useTranslation } from "next-i18next";
 import CouchersLogo from "resources/CouchersLogo";
-import { foundationRoute } from "routes";
+import { foundationRoute, latestFinancialsURL } from "routes";
 
 import { BENEFACTOR_EMAIL } from "./constants";
 import DonationsBox from "./DonationsBox";
 
 const useStyles = makeStyles((theme) => ({
   donationsImage: {
+    position: "absolute",
     width: "100%",
     height: "100%",
     objectFit: "cover",
@@ -28,6 +29,7 @@ const useStyles = makeStyles((theme) => ({
   },
 
   donationsWrapper: {
+    position: "relative",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -35,7 +37,7 @@ const useStyles = makeStyles((theme) => ({
   },
 
   donationsLogoHeader: {
-    position: "absolute",
+    position: "relative",
     zIndex: 1,
     maxWidth: "68.75rem",
     display: "flex",
@@ -207,13 +209,29 @@ export default function Donations() {
           {t("donations:donations_title2")}
         </Typography>
 
-        <Markdown
+        <div
           className={classNames(
             classes.donationsText,
             classes.donationsLayoutSecondaryText,
           )}
-          source={t("donations:donations_text2")}
-        />
+        >
+          <Markdown
+            className={classNames(
+              classes.donationsText,
+              classes.donationsLayoutSecondaryText,
+            )}
+            source={t("donations:donations_text2")}
+          />
+          <Typography variant="body1">
+            <Link href={latestFinancialsURL} underline="hover">
+              <Trans
+                t={t}
+                i18nKey="donations:donations_use_explainer"
+                values={{ year: "2024" }}
+              />
+            </Link>
+          </Typography>
+        </div>
       </section>
     </>
   );

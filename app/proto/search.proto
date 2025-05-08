@@ -102,6 +102,9 @@ message SearchRes {
 }
 
 message UserSearchReq {
+  // if this field is present, we filter to exactly these users (any invalid ids are ignored)
+  repeated int64 exactly_user_ids = 35;
+
   google.protobuf.StringValue query = 3;
   // whether the query (if any) should only search through username and display name
   bool query_name_only = 30;
@@ -128,6 +131,7 @@ message UserSearchReq {
   repeated string gender = 9;
   google.protobuf.UInt32Value guests = 10;
   bool only_with_references = 12;
+  bool only_with_strong_verification = 34;
 
   // bool friends_only = 13;
 
@@ -158,6 +162,7 @@ message UserSearchRes {
   repeated Result results = 1;
 
   string next_page_token = 2;
+  uint32 total_items = 3;
 }
 
 message EventSearchReq {

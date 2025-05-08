@@ -9,31 +9,41 @@ from types import SimpleNamespace
 
 import requests
 from google.protobuf import empty_pb2
-from sqlalchemy import Integer
+from sqlalchemy import Float, Integer
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import and_, case, cast, delete, distinct, extract, func, literal, not_, or_, select, union_all
-from sqlalchemy.sql.functions import percentile_disc
 
 from couchers.config import config
+from couchers.constants import (
+    ACTIVENESS_PROBE_EXPIRY_TIME,
+    ACTIVENESS_PROBE_INACTIVITY_PERIOD,
+    ACTIVENESS_PROBE_TIME_REMINDERS,
+)
 from couchers.crypto import asym_encrypt, b64decode, simple_decrypt
 from couchers.db import session_scope
 from couchers.email.dev import print_dev_email
 from couchers.email.smtp import send_smtp_email
 from couchers.helpers.badges import user_add_badge, user_remove_badge
-from couchers.materialized_views import refresh_materialized_views, refresh_materialized_views_rapid
+from couchers.materialized_views import (
+    refresh_materialized_views,
+    refresh_materialized_views_rapid,
+    user_response_rates,
+)
 from couchers.metrics import strong_verification_completions_counter
 from couchers.models import (
     AccountDeletionToken,
+    ActivenessProbe,
+    ActivenessProbeStatus,
     Cluster,
     ClusterRole,
     ClusterSubscription,
-    Float,
     GroupChat,
     GroupChatSubscription,
     HostingStatus,
     HostRequest,
     Invoice,
     LoginToken,
+    MeetupStatus,
     Message,
     MessageType,
     PassportSex,
@@ -50,6 +60,7 @@ from couchers.resources import get_badge_dict, get_static_badge_dict
 from couchers.servicers.api import user_model_to_pb
 from couchers.servicers.blocking import are_blocked
 from couchers.servicers.conversations import generate_message_notifications
+from couchers.servicers.discussions import generate_create_discussion_notifications
 from couchers.servicers.events import (
     generate_event_cancel_notifications,
     generate_event_create_notifications,
@@ -57,10 +68,11 @@ from couchers.servicers.events import (
     generate_event_update_notifications,
 )
 from couchers.servicers.requests import host_request_to_pb
+from couchers.servicers.threads import generate_reply_notifications
 from couchers.sql import couchers_select as select
 from couchers.tasks import enforce_community_memberships as tasks_enforce_community_memberships
 from couchers.tasks import send_duplicate_strong_verification_email
-from couchers.utils import now
+from couchers.utils import Timestamp_from_datetime, now
 from proto import notification_data_pb2
 from proto.internal import jobs_pb2, verification_pb2
 
@@ -75,6 +87,10 @@ handle_email_digests.PAYLOAD = empty_pb2.Empty
 handle_email_digests.SCHEDULE = timedelta(minutes=15)
 
 generate_message_notifications.PAYLOAD = jobs_pb2.GenerateMessageNotificationsPayload
+
+generate_reply_notifications.PAYLOAD = jobs_pb2.GenerateReplyNotificationsPayload
+
+generate_create_discussion_notifications.PAYLOAD = jobs_pb2.GenerateCreateDiscussionNotificationsPayload
 
 generate_event_create_notifications.PAYLOAD = jobs_pb2.GenerateEventCreateNotificationsPayload
 
@@ -659,53 +675,15 @@ def update_recommendation_scores(payload):
         other_points = 0.0 + 10 * wcb + 5 * cb + int_(badge_subquery.c.badge_points)
 
         # response rate
-        t = (
-            select(Message.conversation_id, Message.time)
-            .where(Message.message_type == MessageType.chat_created)
-            .subquery()
-        )
-        s = (
-            select(Message.conversation_id, Message.author_id, func.min(Message.time).label("time"))
-            .group_by(Message.conversation_id, Message.author_id)
-            .subquery()
-        )
-        hr_subquery = (
-            select(
-                HostRequest.host_user_id.label("user_id"),
-                func.avg(s.c.time - t.c.time).label("avg_response_time"),
-                func.count(t.c.time).label("received"),
-                func.count(s.c.time).label("responded"),
-                float_(
-                    extract(
-                        "epoch",
-                        percentile_disc(0.33).within_group(func.coalesce(s.c.time - t.c.time, timedelta(days=1000))),
-                    )
-                    / 60.0
-                ).label("response_time_33p"),
-                float_(
-                    extract(
-                        "epoch",
-                        percentile_disc(0.66).within_group(func.coalesce(s.c.time - t.c.time, timedelta(days=1000))),
-                    )
-                    / 60.0
-                ).label("response_time_66p"),
-            )
-            .join(t, t.c.conversation_id == HostRequest.conversation_id)
-            .outerjoin(
-                s, and_(s.c.conversation_id == HostRequest.conversation_id, s.c.author_id == HostRequest.host_user_id)
-            )
-            .group_by(HostRequest.host_user_id)
-            .subquery()
-        )
-        avg_response_time = hr_subquery.c.avg_response_time
-        avg_response_time_hr = float_(extract("epoch", avg_response_time) / 60.0)
-        received = hr_subquery.c.received
-        responded = hr_subquery.c.responded
+        hr_subquery = select(
+            user_response_rates.c.user_id,
+            float_(extract("epoch", user_response_rates.c.response_time_33p) / 60.0).label("response_time_33p"),
+            float_(extract("epoch", user_response_rates.c.response_time_66p) / 60.0).label("response_time_66p"),
+        ).subquery()
         response_time_33p = hr_subquery.c.response_time_33p
         response_time_66p = hr_subquery.c.response_time_66p
-        response_rate = float_(responded / (1.0 * func.greatest(received, 1)))
         # be careful with nulls
-        response_rate_points = -10 * int_(response_time_33p > 60 * 48.0) + 5 * int_(response_time_66p < 60 * 48.0)
+        response_rate_points = -10 * int_(response_time_33p > 60 * 72.0) + 5 * int_(response_time_66p < 60 * 48.0)
 
         recommendation_score = (
             profile_points
@@ -885,3 +863,83 @@ def finalize_strong_verification(payload):
 
 
 finalize_strong_verification.PAYLOAD = jobs_pb2.FinalizeStrongVerificationPayload
+
+
+def send_activeness_probes(payload):
+    with session_scope() as session:
+        ## Step 1: create new activeness probes for those who need it and don't have one (if enabled)
+
+        if config["ACTIVENESS_PROBES_ENABLED"]:
+            # current activeness probes
+            subquery = select(ActivenessProbe.user_id).where(ActivenessProbe.responded == None).subquery()
+
+            # users who we should send an activeness probe to
+            new_probe_user_ids = (
+                session.execute(
+                    select(User.id)
+                    .where(User.is_visible)
+                    .where(User.hosting_status == HostingStatus.can_host)
+                    .where(User.last_active < func.now() - ACTIVENESS_PROBE_INACTIVITY_PERIOD)
+                    .where(User.id.not_in(select(subquery.c.user_id)))
+                )
+                .scalars()
+                .all()
+            )
+
+            for user_id in new_probe_user_ids:
+                session.add(ActivenessProbe(user_id=user_id))
+
+            session.commit()
+
+        ## Step 2: actually send out probe notifications
+        for probe_number_minus_1, delay in enumerate(ACTIVENESS_PROBE_TIME_REMINDERS):
+            probes = (
+                session.execute(
+                    select(ActivenessProbe)
+                    .where(ActivenessProbe.notifications_sent == probe_number_minus_1)
+                    .where(ActivenessProbe.probe_initiated + delay < func.now())
+                    .where(ActivenessProbe.is_pending)
+                )
+                .scalars()
+                .all()
+            )
+
+            for probe in probes:
+                probe.notifications_sent = probe_number_minus_1 + 1
+                context = SimpleNamespace(user_id=probe.user.id)
+                notify(
+                    session,
+                    user_id=probe.user.id,
+                    topic_action="activeness:probe",
+                    key=probe.id,
+                    data=notification_data_pb2.ActivenessProbe(
+                        reminder_number=probe_number_minus_1 + 1,
+                        deadline=Timestamp_from_datetime(probe.probe_initiated + ACTIVENESS_PROBE_EXPIRY_TIME),
+                    ),
+                )
+                session.commit()
+
+        ## Step 3: for those who haven't responded, mark them as failed
+        expired_probes = (
+            session.execute(
+                select(ActivenessProbe)
+                .where(ActivenessProbe.notifications_sent == len(ACTIVENESS_PROBE_TIME_REMINDERS))
+                .where(ActivenessProbe.is_pending)
+                .where(ActivenessProbe.probe_initiated + ACTIVENESS_PROBE_EXPIRY_TIME < func.now())
+            )
+            .scalars()
+            .all()
+        )
+
+        for probe in expired_probes:
+            probe.responded = now()
+            probe.response = ActivenessProbeStatus.expired
+            if probe.user.hosting_status == HostingStatus.can_host:
+                probe.user.hosting_status = HostingStatus.cant_host
+            if probe.user.meetup_status == MeetupStatus.wants_to_meetup:
+                probe.user.meetup_status = MeetupStatus.open_to_meetup
+            session.commit()
+
+
+send_activeness_probes.PAYLOAD = empty_pb2.Empty
+send_activeness_probes.SCHEDULE = timedelta(minutes=60)
