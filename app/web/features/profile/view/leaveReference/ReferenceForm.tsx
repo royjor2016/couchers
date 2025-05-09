@@ -8,39 +8,6 @@ import { useTranslation } from "i18n";
 import { GLOBAL, PROFILE } from "i18n/namespaces";
 import { useState } from "react";
 import { leaveReferenceBaseRoute, ReferenceStep } from "routes";
-import makeStyles from "utils/makeStyles";
-
-export const useReferenceStyles = makeStyles((theme) => ({
-  alert: {
-    marginBottom: theme.spacing(3),
-  },
-  buttonContainer: {
-    display: "flex",
-    justifyContent: "center",
-    paddingTop: theme.spacing(1),
-  },
-  card: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(1),
-  },
-  form: {
-    marginBottom: theme.spacing(2),
-  },
-  text: {
-    "& > .MuiInputBase-root": {
-      width: "100%",
-    },
-    marginTop: theme.spacing(1),
-    [theme.breakpoints.up("md")]: {
-      "& > .MuiInputBase-root": {
-        width: 400,
-      },
-    },
-  },
-  referenceText: {
-    whiteSpace: "pre-wrap",
-  },
-}));
 
 export type ReferenceContextFormData = {
   text: string;
