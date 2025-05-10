@@ -9,16 +9,20 @@ import { GLOBAL, PROFILE } from "i18n/namespaces";
 import { useState } from "react";
 import { leaveReferenceBaseRoute, ReferenceStep } from "routes";
 
+import DidStay from "./DidStay";
+
 export type ReferenceContextFormData = {
   text: string;
   wasAppropriate: string;
   rating: number;
+  privateText?: string;
 };
 
 export type ReferenceFormInputs = {
   text: string;
   wasAppropriate: boolean;
   rating: number;
+  privateText?: string;
 };
 
 export interface ReferenceStepProps {
@@ -47,6 +51,7 @@ export default function ReferenceForm({
     text: "",
     wasAppropriate: "",
     rating: 0.33,
+    privateText: "",
   });
 
   const setReferenceValues = (values: ReferenceContextFormData) => {
@@ -57,14 +62,22 @@ export default function ReferenceForm({
   };
 
   const isSkippedStep =
-    referenceData.wasAppropriate === "" && step !== "appropriate";
+    referenceData.wasAppropriate === "" &&
+    step !== "appropriate" &&
+    step !== "didStay";
+
   const redirectTo =
     referenceType === "friend"
-      ? `${leaveReferenceBaseRoute}/${referenceType}/${userId}`
-      : `${leaveReferenceBaseRoute}/${referenceType}/${userId}/${hostRequestId}`;
+      ? `${leaveReferenceBaseRoute}/${referenceType}/${userId}/didStay`
+      : `${leaveReferenceBaseRoute}/${referenceType}/${userId}/${hostRequestId}/didStay`;
 
-  return isSkippedStep ? (
-    <Redirect to={redirectTo} />
+  return step === "didStay" ? (
+    <DidStay
+      referenceData={referenceData}
+      setReferenceValues={setReferenceValues}
+      referenceType={referenceType}
+      hostRequestId={hostRequestId}
+    />
   ) : step === "appropriate" ? (
     <Appropriate
       referenceData={referenceData}

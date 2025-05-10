@@ -9,12 +9,11 @@ import { useTranslation } from "i18n";
 import { GLOBAL, MESSAGES } from "i18n/namespaces";
 import Link from "next/link";
 import { HostRequestStatus } from "proto/conversations_pb";
-import { ReferenceType } from "proto/references_pb";
 import { HostRequest, RespondHostRequestReq } from "proto/requests_pb";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { UseMutationResult } from "react-query";
-import { referenceTypeRoute, routeToLeaveReference } from "routes";
+import { leaveReferenceBaseRoute } from "routes";
 import { theme } from "theme";
 
 import FieldButton from "./FieldButton";
@@ -108,15 +107,15 @@ export default function HostRequestSendField({
       ({ hostRequestId }) => hostRequestId === hostRequest.hostRequestId,
     );
 
-  const referenceRoute = routeToLeaveReference(
-    referenceTypeRoute[
-      isHost
-        ? ReferenceType.REFERENCE_TYPE_HOSTED
-        : ReferenceType.REFERENCE_TYPE_SURFED
-    ],
-    isHost ? hostRequest.surferUserId : hostRequest.hostUserId,
-    hostRequest.hostRequestId,
-  );
+  // const referenceRoute = routeToLeaveReference(
+  //   referenceTypeRoute[
+  //     isHost
+  //       ? ReferenceType.REFERENCE_TYPE_HOSTED
+  //       : ReferenceType.REFERENCE_TYPE_SURFED
+  //   ],
+  //   isHost ? hostRequest.surferUserId : hostRequest.hostUserId,
+  //   hostRequest.hostRequestId,
+  // );
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Enter" && event.ctrlKey) {
@@ -142,7 +141,7 @@ export default function HostRequestSendField({
           />
         )}
         {isReferenceAvailable && (
-          <Link href={referenceRoute} passHref legacyBehavior>
+          <Link href={leaveReferenceBaseRoute} passHref legacyBehavior>
             <StyledButton color="primary" component="a">
               {t("messages:write_reference_button_text")}
             </StyledButton>

@@ -86,6 +86,10 @@ export default function LeaveReferencePage({
       ({ hostRequestId: availableId }) => availableId === hostRequestId,
     );
 
+  // console.log("isFriendReference", isFriendReference);
+  // console.log("isAvailableReference", isAvailableReference);
+  // console.log("availableReferences", availableReferences);
+
   return (
     <>
       {(userError || availableReferencesError) && (
@@ -94,29 +98,28 @@ export default function LeaveReferencePage({
         </Alert>
       )}
       {(isUserLoading || isAvailableReferencesLoading) && <CenteredSpinner />}
-      {availableReferences &&
-        user &&
-        (isFriendReference || isAvailableReference ? (
-          <StyledRoot>
-            <ProfileUserProvider user={user}>
-              {!isBelowMedium && (
-                <UserOverview showHostAndMeetAvailability={false} />
-              )}
-              <StyledFormWrapper>
-                <ReferenceForm
-                  hostRequestId={hostRequestId}
-                  referenceType={referenceType}
-                  userId={userId}
-                  step={step}
-                />
-              </StyledFormWrapper>
-            </ProfileUserProvider>
-          </StyledRoot>
-        ) : (
-          <Alert severity="error">
-            {t("profile:leave_reference.reference_type_not_available")}
-          </Alert>
-        ))}
+      {availableReferences && user &&
+      (isFriendReference || isAvailableReference) ? (
+        <StyledRoot>
+          <ProfileUserProvider user={user}>
+            {!isBelowMedium && (
+              <UserOverview showHostAndMeetAvailability={false} />
+            )}
+            <StyledFormWrapper>
+              <ReferenceForm
+                hostRequestId={hostRequestId}
+                referenceType={referenceType}
+                userId={userId}
+                step={step}
+              />
+            </StyledFormWrapper>
+          </ProfileUserProvider>
+        </StyledRoot>
+      ) : (
+        <Alert severity="error">
+          {t("profile:leave_reference.reference_type_not_available")}
+        </Alert>
+      )}
     </>
   );
 }

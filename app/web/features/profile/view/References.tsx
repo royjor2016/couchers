@@ -104,15 +104,7 @@ export default function References() {
         {availableReferences?.canWriteFriendReference &&
           friends === User.FriendshipStatus.FRIENDS && (
             <div className={classes.buttonContainer}>
-              <Link
-                href={{
-                  pathname: `${leaveReferenceBaseRoute}/${
-                    referenceTypeRoute[ReferenceType.REFERENCE_TYPE_FRIEND]
-                  }/${userId}`,
-                }}
-                passHref
-                legacyBehavior
-              >
+              <Link href={leaveReferenceBaseRoute} passHref legacyBehavior>
                 <Button startIcon={<AddIcon />}>
                   {t("profile:write_reference")}
                 </Button>
