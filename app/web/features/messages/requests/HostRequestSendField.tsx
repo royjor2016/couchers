@@ -67,6 +67,8 @@ export default function HostRequestSendField({
 
   const isHost = hostRequest.hostUserId === authState.userId;
 
+  console.log("IS HOST", isHost, "HOST REQUEST", hostRequest);
+
   const { data: availableRefrences } = useListAvailableReferences(
     isHost ? hostRequest.surferUserId : hostRequest.hostUserId,
   );
@@ -107,22 +109,14 @@ export default function HostRequestSendField({
       ({ hostRequestId }) => hostRequestId === hostRequest.hostRequestId,
     );
 
-  // const referenceRoute = routeToLeaveReference(
-  //   referenceTypeRoute[
-  //     isHost
-  //       ? ReferenceType.REFERENCE_TYPE_HOSTED
-  //       : ReferenceType.REFERENCE_TYPE_SURFED
-  //   ],
-  //   isHost ? hostRequest.surferUserId : hostRequest.hostUserId,
-  //   hostRequest.hostRequestId,
-  // );
-
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Enter" && event.ctrlKey) {
       event.preventDefault();
       onSubmit();
     }
   };
+
+  const referenceRoute = `${leaveReferenceBaseRoute}/${hostRequest.hostRequestId.toString()}`;
 
   return (
     <form onSubmit={onSubmit}>
@@ -141,7 +135,7 @@ export default function HostRequestSendField({
           />
         )}
         {isReferenceAvailable && (
-          <Link href={leaveReferenceBaseRoute} passHref legacyBehavior>
+          <Link href={referenceRoute} passHref legacyBehavior>
             <StyledButton color="primary" component="a">
               {t("messages:write_reference_button_text")}
             </StyledButton>

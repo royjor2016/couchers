@@ -69,6 +69,12 @@ export default function References() {
   const { userId, friends } = useProfileUser();
   const { data: availableReferences } = useListAvailableReferences(userId);
 
+  const hostRequestId = availableReferences?.availableWriteReferencesList.find(
+
+  )
+
+  console.log("AVAILABLE REFERENCES", availableReferences)
+
   const handleChange = (event: SelectChangeEvent<ReferenceTypeState>) => {
     setReferenceType(event.target.value as ReferenceTypeState);
   };
@@ -104,7 +110,11 @@ export default function References() {
         {availableReferences?.canWriteFriendReference &&
           friends === User.FriendshipStatus.FRIENDS && (
             <div className={classes.buttonContainer}>
-              <Link href={leaveReferenceBaseRoute} passHref legacyBehavior>
+              <Link
+                href={`${leaveReferenceBaseRoute}/hostRequest/${userId.toString()}`} // fix this to be hostRequestId
+                passHref
+                legacyBehavior
+              >
                 <Button startIcon={<AddIcon />}>
                   {t("profile:write_reference")}
                 </Button>
