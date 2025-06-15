@@ -145,6 +145,7 @@ const DiscoverEventsList = () => {
       onChange={handleOnChangeAutocomplete}
       fieldError={undefined}
       fullWidth={isMobile}
+      autocompleteContext="discover-events-list"
     />
   );
 

@@ -70,6 +70,7 @@ export default function HeroSearch() {
         }}
         fieldError={errors.location?.message}
         disableRegions
+        autocompleteContext="hero-search"
       />
     </form>
   );
