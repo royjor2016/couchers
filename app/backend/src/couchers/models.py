@@ -93,6 +93,7 @@ class ParkingDetails(enum.Enum):
     paid_onsite = enum.auto()
     paid_offsite = enum.auto()
 
+
 class HeardAboutUs(enum.Enum):
     source_friend = 1
     source_social_media = 2
@@ -103,7 +104,7 @@ class HeardAboutUs(enum.Enum):
     source_other_hosting_platform = 7
     source_news_article = 8
     source_advertisement = 9
-    
+
 
 class ProfilePublicVisibility(enum.Enum):
     # no public info
@@ -177,10 +178,9 @@ class User(Base):
 
     joined = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     last_active = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    
+
     heard_about_us_source = Column(Enum(HeardAboutUs), nullable=False, server_default=text("NULL"))
     heard_about_us_source_other = Column(String, nullable=True, server_default=text("''"))
-    
 
     public_visibility = Column(Enum(ProfilePublicVisibility), nullable=False, server_default="map_only")
     has_modified_public_visibility = Column(Boolean, nullable=False, server_default=expression.false())
