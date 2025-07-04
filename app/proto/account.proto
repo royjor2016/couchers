@@ -159,6 +159,9 @@ message GetAccountInfoRes {
 
   ProfilePublicVisibility profile_public_visibility = 17;
 
+  HeardAboutUs.Source heard_about_us = 19;
+  HeardAboutUs. heard_about_us_other = 20;
+
   bool is_volunteer = 18;
 }
 
@@ -268,6 +271,27 @@ message LogOutSessionReq {
 message LogOutOtherSessionsReq {
   bool confirm = 1;
 }
+
+message HeardAboutUs {
+  // The source of the information about Couchers.org
+  enum Source {
+    SOURCE_FRIEND = 1;
+    SOURCE_SOCIAL_MEDIA = 2;
+    SOURCE_SEARCH_ENGINE = 3;
+    SOURCE_OTHER = 4;
+    SOURCE_EVENT = 5;
+    SOURCE_COUCHSURFING = 6;
+    SOURCE_OTHER_HOSTING_PLATFORM = 7;
+    SOURCE_NEWS_ARTICLE = 8;
+    SOURCE_ADVERTISEMENT = 9;
+  }
+
+  Source source = 1;
+
+  // If the source is "other", this field can be used to specify it
+  string other_source = 2;
+}
+
 
 enum ProfilePublicVisibility {
   PROFILE_PUBLIC_VISIBILITY_UNKNOWN = 0;
