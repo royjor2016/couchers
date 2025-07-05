@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Tooltip, Chip } from 'react-native-paper';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { Tooltip, Chip } from "react-native-paper";
 import { User } from "@/proto/api_pb";
 import { useBadges } from "../hooks/useBadges";
 
@@ -10,11 +10,8 @@ interface Props {
 
 const styles = StyleSheet.create({
   badgeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  badge: {
-    margin: 4,
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
 });
 
@@ -31,10 +28,7 @@ export const Badges = ({ user }: Props) => {
         const badge = (badges || {})[badgeId];
         return (
           <Tooltip key={badge.id} title={badge.description}>
-            <Chip
-              style={[styles.badge, { backgroundColor: badge.color }]}
-              onPress={() => {}}
-            >
+            <Chip style={{ backgroundColor: badge.color }} onPress={() => {}}>
               {badge.name}
             </Chip>
           </Tooltip>

@@ -8,6 +8,7 @@ import { HostingStatus, MeetupStatus } from "@/proto/api_pb";
 import { MaterialIcons } from "@expo/vector-icons";
 import { hostingStatusLabels, meetupStatusLabels } from "../constants";
 import { Badges } from "./Badges";
+import { theme } from "@/theme";
 
 type UserOverviewProps = {
   showHostAndMeetAvailability: boolean;
@@ -41,28 +42,20 @@ export default function UserOverview({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
+        padding: 20,
       }}
     >
-      {user.avatarUrl && (
-        <Image
-          source={{ uri: user.avatarUrl }}
-          style={{
-            width: 100,
-            height: 100,
-            borderRadius: 50,
-          }}
-        />
-      )}
-
-      <View style={{ flex: 1, marginLeft: 16 }}>
-        <ThemedText type="title">{user.name}</ThemedText>
-        {user.hasStrongVerification ? (
-          <ThemedText>
-            Verified 👍 ({t("profile:heading.strong_verification")})
-          </ThemedText>
-        ) : null}
-        <ThemedText type="subtitle">{user.city}</ThemedText>
-        <Badges user={user} />
+      <View>
+        {user.avatarUrl && (
+          <Image
+            source={{ uri: user.avatarUrl }}
+            style={{
+              width: 100,
+              height: 100,
+              borderRadius: 50,
+            }}
+          />
+        )}
         {showHostAndMeetAvailability && (
           <>
             <View
@@ -113,7 +106,39 @@ export default function UserOverview({
             </View>
           </>
         )}
-        {actions && <View style={{ width: 100, marginTop: 16 }}>{actions}</View>}
+      </View>
+      <View>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <ThemedText type="title" style={{ fontSize: 24 }}>
+            {user.name}
+          </ThemedText>
+          {user.hasStrongVerification ? (
+            <MaterialIcons
+              name="verified-user"
+              size={24}
+              style={{
+                paddingLeft: 8,
+                paddingRight: 8,
+                color: theme.palette.primary.main,
+              }}
+            />
+          ) : null}
+        </View>
+        <ThemedText style={{ fontSize: 15, marginBottom: 8 }}>
+          {user.city}
+        </ThemedText>
+        <Badges user={user} />
+
+        {actions && (
+          <View style={{ width: 100, paddingLeft: 16, marginTop: 16 }}>
+            {actions}
+          </View>
+        )}
       </View>
     </View>
   );

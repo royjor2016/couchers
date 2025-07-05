@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.couchers.ios",
+      "bundleIdentifier": "org.couchers.ios.dev",
       "config": {
         "usesNonExemptEncryption": false
       }
