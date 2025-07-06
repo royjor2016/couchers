@@ -159,8 +159,8 @@ message GetAccountInfoRes {
 
   ProfilePublicVisibility profile_public_visibility = 17;
 
-  HeardAboutUs.Source heard_about_us = 19;
-  HeardAboutUs. heard_about_us_other = 20;
+  HeardAboutUs.Source source = 19;
+  HeardAboutUs other_source = 20;
 
   bool is_volunteer = 18;
 }
@@ -275,15 +275,15 @@ message LogOutOtherSessionsReq {
 message HeardAboutUs {
   // The source of the information about Couchers.org
   enum Source {
-    SOURCE_FRIEND = 1;
-    SOURCE_SOCIAL_MEDIA = 2;
-    SOURCE_SEARCH_ENGINE = 3;
-    SOURCE_OTHER = 4;
-    SOURCE_EVENT = 5;
-    SOURCE_COUCHSURFING = 6;
-    SOURCE_OTHER_HOSTING_PLATFORM = 7;
-    SOURCE_NEWS_ARTICLE = 8;
-    SOURCE_ADVERTISEMENT = 9;
+    SOURCE_FRIEND = 0;
+    SOURCE_SOCIAL_MEDIA = 1;
+    SOURCE_SEARCH_ENGINE = 2;
+    SOURCE_OTHER = 3;
+    SOURCE_EVENT = 4;
+    SOURCE_COUCHSURFING = 5;
+    SOURCE_OTHER_HOSTING_PLATFORM = 6;
+    SOURCE_NEWS_ARTICLE = 7;
+    SOURCE_ADVERTISEMENT = 8;
   }
 
   Source source = 1;
