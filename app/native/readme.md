@@ -1,61 +1,50 @@
-# Couchers native apps
+# Welcome to your Expo app 👋
 
-## Quick start
+This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-You need `nodejs` v20. We recommend using `nvm` (the [node version manager](https://github.com/nvm-sh/nvm)) to do this. You can install it with:
+## Get started
 
-```sh
-wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+1. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+2. Start the app
+
+   ```bash
+   npx expo start
+   ```
+
+In the output, you'll find options to open the app in a
+
+- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
+- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+
+You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+
+## Get a fresh project
+
+When you're ready, run:
+
+```bash
+npm run reset-project
 ```
 
-Now run:
+This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-```sh
-# Check out the repo and navigate to app/native
-git clone https://github.com/Couchers-org/couchers.git
-cd couchers/app/native
+## Learn more
 
-# Set up node
-nvm install
+To learn more about developing your project with Expo, look at the following resources:
 
-# Download & extract the latest protos
-wget -qO- https://develop--protos.preview.couchershq.org/ts.tar.gz | tar xz
+- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
-# install deps
-npm i
+## Join the community
 
-# start expo
-npx expo start
-```
+Join our community of developers creating universal apps.
 
-This will start the expo server. You now need to run the Couchers-specific expo dev app on your phone and connect to this server.
-
-## Building a dev client
-
-For these you need the `eas` cli program:
-
-```sh
-# install expo cli
-npm i --global eas-cli
-```
-
-### Create a dev build for a physical iPhone
-
-Register the phone in [Expo](https://expo.dev/accounts/couchers-org/settings/apple-devices).
-
-```sh
-# build and pick the right phone, you'll need to log in
-eas build --profile development --platform ios
-```
-
-### Create a dev build for iOS simulator
-
-```sh
-eas build --profile simulator --platform ios
-```
-
-### Create a dev build for Android simulator or .apk for manual install
-
-```sh
-eas build --profile simulator --platform android
-```
+- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
+- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.

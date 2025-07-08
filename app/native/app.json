@@ -1,30 +1,22 @@
 {
   "expo": {
-    "name": "Couchers.org",
-    "slug": "couchers",
-    "version": "1.0.1",
+    "name": "native",
+    "slug": "native",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "couchers",
+    "scheme": "native",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "org.couchers.ios",
-      "config": {
-        "usesNonExemptEncryption": false
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "org.couchers.android"
+      "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro",
@@ -33,40 +25,18 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font",
       [
-        "@sentry/react-native/expo",
+        "expo-splash-screen",
         {
-          "url": "https://sentry.io/",
-          "project": "native",
-          "organization": "couchers"
-        }
-      ],
-      "@maplibre/maplibre-react-native",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow Couchers to use your location."
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "ea3d934f-4ba0-4a23-a948-2c259251488f"
-      }
-    },
-    "owner": "couchers-org",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/ea3d934f-4ba0-4a23-a948-2c259251488f"
     }
   }
 }
