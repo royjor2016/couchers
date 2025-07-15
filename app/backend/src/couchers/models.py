@@ -179,8 +179,16 @@ class User(Base):
     joined = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     last_active = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
-    heard_about_us_source = Column(Enum(HeardAboutUs), server_default=HeardAboutUs.source_friend, nullable=False)
-    heard_about_us_source_other = Column(String, nullable=True, server_default=text("''"))
+    heard_about_us_source = Column(
+        Enum(HeardAboutUs), 
+        server_default=text("'source_friend'"),  # Use the string representation of the Enum value
+        nullable=False
+    )
+    heard_about_us_source_other = Column(
+        String, 
+        nullable=True, 
+        server_default=text("''")
+    )
 
     public_visibility = Column(Enum(ProfilePublicVisibility), nullable=False, server_default="map_only")
     has_modified_public_visibility = Column(Boolean, nullable=False, server_default=expression.false())
