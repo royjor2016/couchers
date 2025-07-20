@@ -15,8 +15,7 @@ services:
       - "./data/postgres/pgdata:/var/lib/postgresql/data"
     restart: unless-stopped
     ports:
-      - 6545:6545
-    platform: linux/amd64
+      - 6545:5432
   backend:
     build: backend
     env_file: backend.dev.env
