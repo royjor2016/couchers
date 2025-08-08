@@ -2,7 +2,6 @@ import difflib
 import re
 import subprocess
 
-import pytest
 from sqlalchemy.sql import func
 
 from couchers.config import config
@@ -125,7 +124,7 @@ def strip_leading_whitespace(lines):
     return [s.lstrip() for s in lines]
 
 
-@pytest.mark.skipif(not run_migration_test(), reason="Migration test disabled")
+# @pytest.mark.skipif(not run_migration_test(), reason="Migration test disabled")
 def test_migrations(testconfig):
     """
     This test will only run succesfully if you have `pg_dump` installed and everything set up, which only happens if the

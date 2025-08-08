@@ -902,6 +902,12 @@ def get_num_references(session, user_ids):
 def user_model_to_pb(db_user, session, context):
     # note that this function should work also for banned/deleted users as it's called from Admin.GetUser
     # note that this function is sometimes called by a logged out user, in which case context comes from make_logged_out_context
+    caller_is_admin = False
+    caller_id = getattr(context, "_user_id", None) or getattr(context, "user_id", None)
+    if caller_id:
+        caller = session.get(User, caller_id)
+        caller_is_admin = bool(caller and caller.is_superuser)
+
     num_references = get_num_references(session, [db_user.id]).get(db_user.id, 0)
 
     # returns (lat, lng)
@@ -967,7 +973,7 @@ def user_model_to_pb(db_user, session, context):
     if db_user.phone_verification_verified:
         verification_score += 1.0 * db_user.phone_is_verified
 
-    if db_user.is_deleted or db_user.is_banned:
+    if (db_user.is_deleted or db_user.is_banned) and not caller_is_admin:
         return api_pb2.User(
             user_id=db_user.id,
             username=f"ghost{db_user.id}",
