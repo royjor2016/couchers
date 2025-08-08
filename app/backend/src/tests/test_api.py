@@ -1,4 +1,5 @@
 from datetime import timedelta
+from types import SimpleNamespace
 
 import grpc
 import pytest
@@ -8,9 +9,10 @@ from couchers import errors
 from couchers.db import session_scope
 from couchers.jobs.handlers import update_badges
 from couchers.materialized_views import refresh_materialized_views_rapid
-from couchers.models import FriendRelationship, FriendStatus, RateLimitAction
+from couchers.models import FriendRelationship, FriendStatus, RateLimitAction, User
 from couchers.rate_limits.definitions import RATE_LIMIT_DEFINITIONS, RATE_LIMIT_INTERVAL_STRING
 from couchers.resources import get_badge_dict
+from couchers.servicers.api import lite_user_to_pb, user_model_to_pb
 from couchers.sql import couchers_select as select
 from couchers.utils import create_coordinate, to_aware_datetime
 from proto import api_pb2, jail_pb2, notifications_pb2
@@ -167,6 +169,54 @@ def test_get_user(db):
         assert res.name == user2.name
 
 
+@pytest.mark.parametrize("flag", ["is_deleted", "is_banned"])
+def test_user_model_to_pb_ghost_user(db, flag):
+    user1, _ = generate_user()
+    user2, _ = generate_user()
+
+    with session_scope() as session:
+        u2 = session.merge(user2)
+        setattr(u2, flag, True)
+        session.commit()
+
+    with session_scope() as session:
+        db_user = session.execute(select(User).where(User.id == user2.id)).scalar_one()
+        context = SimpleNamespace(user_id=user1.id)
+        user_pb = user_model_to_pb(db_user, session, context)
+
+    assert user_pb.user_id == user2.id
+    assert user_pb.username == f"ghost{user2.id}"
+    assert user_pb.name == "Deleted user"
+    assert user_pb.lat == 0
+    assert user_pb.lng == 0
+    assert user_pb.radius == 0
+    assert user_pb.verification == 0.0
+    assert user_pb.community_standing == 0.0
+    assert user_pb.num_references == 0
+    assert user_pb.age == 0
+    assert user_pb.hosting_status == api_pb2.HOSTING_STATUS_UNKNOWN
+    assert user_pb.meetup_status == api_pb2.MEETUP_STATUS_UNKNOWN
+    assert user_pb.city == ""
+    assert user_pb.hometown == ""
+    assert user_pb.timezone == ""
+    assert user_pb.gender == ""
+    assert user_pb.pronouns == ""
+    assert user_pb.occupation == ""
+    assert user_pb.education == ""
+    assert user_pb.about_me == ""
+    assert user_pb.things_i_like == ""
+    assert user_pb.about_place == ""
+    assert user_pb.additional_information == ""
+    assert list(user_pb.language_abilities) == []
+    assert list(user_pb.regions_visited) == []
+    assert list(user_pb.regions_lived) == []
+    assert list(user_pb.badges) == []
+    assert user_pb.friends == api_pb2.User.FriendshipStatus.NOT_FRIENDS
+    assert user_pb.avatar_url == ""
+    assert user_pb.avatar_thumbnail_url == ""
+    assert user_pb.has_strong_verification is False
+
+
 def test_lite_coords(db):
     # make them need to update location
     user1, token1 = generate_user(geom=create_coordinate(0, 0), geom_radius=0, needs_to_update_location=True)
@@ -260,6 +310,34 @@ def test_lite_get_user(db):
         assert res.user_id == user2.id
         assert res.username == user2.username
         assert res.name == user2.name
+
+
+@pytest.mark.parametrize("flag", ["is_deleted", "is_banned"])
+def test_lite_user_to_pb_ghost_user(flag):
+    user, _ = generate_user()
+
+    with session_scope() as session:
+        u = session.merge(user)
+        setattr(u, flag, True)
+        session.commit()
+
+    refresh_materialized_views_rapid(None)
+
+    with session_scope() as session:
+        lite_user = session.execute(select(User).where(User.id == user.id)).scalar_one()
+        user_pb = lite_user_to_pb(lite_user)
+
+    assert user_pb.user_id == user.id
+    assert user_pb.username == f"ghost{user.id}"
+    assert user_pb.name == "Deleted user"
+    assert user_pb.city == ""
+    assert user_pb.age == 0
+    assert user_pb.avatar_url == ""
+    assert user_pb.avatar_thumbnail_url == ""
+    assert user_pb.lat == 0
+    assert user_pb.lng == 0
+    assert user_pb.radius == 0
+    assert user_pb.has_strong_verification is False
 
 
 def test_GetLiteUsers(db):

@@ -967,51 +967,89 @@ def user_model_to_pb(db_user, session, context):
     if db_user.phone_verification_verified:
         verification_score += 1.0 * db_user.phone_is_verified
 
-    user = api_pb2.User(
-        user_id=db_user.id,
-        username=db_user.username,
-        name=db_user.name,
-        city=db_user.city,
-        hometown=db_user.hometown,
-        timezone=db_user.timezone,
-        lat=lat,
-        lng=lng,
-        radius=db_user.geom_radius,
-        verification=verification_score,
-        community_standing=db_user.community_standing,
-        num_references=num_references,
-        gender=db_user.gender,
-        pronouns=db_user.pronouns,
-        age=int(db_user.age),
-        joined=Timestamp_from_datetime(db_user.display_joined),
-        last_active=Timestamp_from_datetime(db_user.display_last_active),
-        hosting_status=hostingstatus2api[db_user.hosting_status],
-        meetup_status=meetupstatus2api[db_user.meetup_status],
-        occupation=db_user.occupation,
-        education=db_user.education,
-        about_me=db_user.about_me,
-        things_i_like=db_user.things_i_like,
-        about_place=db_user.about_place,
-        language_abilities=[
-            api_pb2.LanguageAbility(code=ability.language_code, fluency=fluency2api[ability.fluency])
-            for ability in db_user.language_abilities
-        ],
-        regions_visited=[region.code for region in db_user.regions_visited],
-        regions_lived=[region.code for region in db_user.regions_lived],
-        additional_information=db_user.additional_information,
-        friends=friends_status,
-        pending_friend_request=pending_friend_request,
-        smoking_allowed=smokinglocation2api[db_user.smoking_allowed],
-        sleeping_arrangement=sleepingarrangement2api[db_user.sleeping_arrangement],
-        parking_details=parkingdetails2api[db_user.parking_details],
-        avatar_url=db_user.avatar.full_url if db_user.avatar else None,
-        avatar_thumbnail_url=db_user.avatar.thumbnail_url if db_user.avatar else None,
-        badges=session.execute(select(UserBadge.badge_id).where(UserBadge.user_id == db_user.id).order_by(UserBadge.id))
-        .scalars()
-        .all(),
-        **get_strong_verification_fields(session, db_user),
-        **response_rate_to_pb(response_rate),
-    )
+    if db_user.is_deleted or db_user.is_banned:
+        return api_pb2.User(
+            user_id=db_user.id,
+            username=f"ghost{db_user.id}",
+            name="Deleted user",
+            city="",
+            hometown="",
+            timezone="",
+            lat=0,
+            lng=0,
+            radius=0,
+            verification=0.0,
+            community_standing=0.0,
+            num_references=num_references,
+            gender="",
+            pronouns="",
+            age=0,
+            hosting_status=api_pb2.HOSTING_STATUS_UNKNOWN,
+            meetup_status=api_pb2.MEETUP_STATUS_UNKNOWN,
+            occupation="",
+            education="",
+            about_me="",
+            things_i_like="",
+            about_place="",
+            language_abilities=[],
+            regions_visited=[],
+            regions_lived=[],
+            additional_information="",
+            friends=api_pb2.User.FriendshipStatus.NOT_FRIENDS,
+            avatar_url=None,
+            avatar_thumbnail_url=None,
+            badges=[],
+            **get_strong_verification_fields(session, db_user),
+            **response_rate_to_pb(None),
+        )
+    else:
+        user = api_pb2.User(
+            user_id=db_user.id,
+            username=db_user.username,
+            name=db_user.name,
+            city=db_user.city,
+            hometown=db_user.hometown,
+            timezone=db_user.timezone,
+            lat=lat,
+            lng=lng,
+            radius=db_user.geom_radius,
+            verification=verification_score,
+            community_standing=db_user.community_standing,
+            num_references=num_references,
+            gender=db_user.gender,
+            pronouns=db_user.pronouns,
+            age=int(db_user.age),
+            joined=Timestamp_from_datetime(db_user.display_joined),
+            last_active=Timestamp_from_datetime(db_user.display_last_active),
+            hosting_status=hostingstatus2api[db_user.hosting_status],
+            meetup_status=meetupstatus2api[db_user.meetup_status],
+            occupation=db_user.occupation,
+            education=db_user.education,
+            about_me=db_user.about_me,
+            things_i_like=db_user.things_i_like,
+            about_place=db_user.about_place,
+            language_abilities=[
+                api_pb2.LanguageAbility(code=ability.language_code, fluency=fluency2api[ability.fluency])
+                for ability in db_user.language_abilities
+            ],
+            regions_visited=[region.code for region in db_user.regions_visited],
+            regions_lived=[region.code for region in db_user.regions_lived],
+            additional_information=db_user.additional_information,
+            friends=friends_status,
+            pending_friend_request=pending_friend_request,
+            smoking_allowed=smokinglocation2api[db_user.smoking_allowed],
+            sleeping_arrangement=sleepingarrangement2api[db_user.sleeping_arrangement],
+            parking_details=parkingdetails2api[db_user.parking_details],
+            avatar_url=db_user.avatar.full_url if db_user.avatar else None,
+            avatar_thumbnail_url=db_user.avatar.thumbnail_url if db_user.avatar else None,
+            badges=session.execute(
+                select(UserBadge.badge_id).where(UserBadge.user_id == db_user.id).order_by(UserBadge.id)
+            )
+            .scalars()
+            .all(),
+            **get_strong_verification_fields(session, db_user),
+            **response_rate_to_pb(response_rate),
+        )
 
     if db_user.max_guests is not None:
         user.max_guests.value = db_user.max_guests
@@ -1077,6 +1115,21 @@ def user_model_to_pb(db_user, session, context):
 
 
 def lite_user_to_pb(lite_user: LiteUser):
+    if lite_user.is_deleted or lite_user.is_banned:
+        return api_pb2.LiteUser(
+            user_id=lite_user.id,
+            username=f"ghost{lite_user.id}",
+            name="Deleted user",
+            city="",
+            age=0,
+            avatar_url=None,
+            avatar_thumbnail_url=None,
+            lat=0,
+            lng=0,
+            radius=0,
+            has_strong_verification=False,
+        )
+
     lat, lng = get_coordinates(lite_user.geom) or (0, 0)
 
     return api_pb2.LiteUser(
