@@ -13,7 +13,7 @@ from couchers.materialized_views import make_lite_users_selectable
 
 # revision identifiers, used by Alembic.
 revision = "9b756f27604a"
-down_revision = "0613ce600e4b"
+down_revision = "8c878b177151"
 branch_labels = None
 depends_on = None
 
