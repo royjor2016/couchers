@@ -18,6 +18,7 @@ from couchers.models import (
     Upload,
     User,
     Volunteer,
+    HeardAboutUs
 )
 from couchers.sql import couchers_select as select
 from couchers.utils import now, today
@@ -58,6 +59,7 @@ def test_GetAccountInfo(db, fast_passwords):
         assert not res.is_superuser
         assert res.ui_language_preference == ""
         assert not res.is_volunteer
+        assert res.heard_about_us_source == HeardAboutUs.source_friend
 
 
 def test_GetAccountInfo_regression(db):

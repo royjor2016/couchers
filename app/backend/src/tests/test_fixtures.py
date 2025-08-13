@@ -26,6 +26,7 @@ from couchers.models import (
     FriendRelationship,
     FriendStatus,
     HostingStatus,
+    HeardAboutUs,
     Language,
     LanguageAbility,
     LanguageFluency,
@@ -279,6 +280,7 @@ def generate_user(*, delete_user=False, complete_profile=True, strong_verificati
             "onboarding_emails_sent": 1,
             "last_onboarding_email_sent": now(),
             "has_donated": True,
+            "heard_about_us_source":HeardAboutUs.source_friend,
         }
 
         for key, value in kwargs.items():
