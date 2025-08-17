@@ -7,9 +7,10 @@ import {
   RadioGroup,
   Select,
   Skeleton,
+  styled,
   Typography,
 } from "@mui/material";
-import makeStyles from "@mui/styles/makeStyles";
+import { useMutation } from "@tanstack/react-query";
 import Alert from "components/Alert";
 import Button from "components/Button";
 import Datepicker from "components/Datepicker";
@@ -18,58 +19,51 @@ import TextField from "components/TextField";
 import dayjs from "dayjs";
 import { useProfileUser } from "features/profile/hooks/useProfileUser";
 import { useLiteUser } from "features/userQueries/useLiteUsers";
-import { RpcError } from "grpc-web";
 import { Trans, useTranslation } from "i18n";
 import { GLOBAL, PROFILE } from "i18n/namespaces";
 import React, { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useMutation } from "react-query";
 import { howToWriteRequestGuideUrl } from "routes";
 import { service } from "service";
 import { CreateHostRequestWrapper } from "service/requests";
+import { theme } from "theme";
 import { isSameOrFutureDate } from "utils/date";
 
-const useStyles = makeStyles((theme) => ({
-  buttonContainer: {
-    display: "flex",
-    justifyContent: "center",
-    paddingTop: theme.spacing(1),
-  },
-  form: {
-    "& > *": {
-      marginTop: theme.spacing(2),
-    },
-  },
-  title: {
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1),
-  },
-  helpText: {
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2),
-  },
-  request: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  date: {
-    marginBottom: theme.spacing(2),
-  },
-  dateRow: {
-    marginTop: theme.spacing(2),
-    display: "flex",
-    flexDirection: "column",
-    width: "72%",
-  },
-  requestField: {
-    marginTop: theme.spacing(2),
-  },
-  send: {
-    display: "flex",
-    justifyContent: "flex-end",
-    marginTop: theme.spacing(2),
-  },
+const StyledTitle = styled(Typography)(() => ({
+  marginTop: theme.spacing(1),
+  marginBottom: theme.spacing(1),
+}));
+
+const StyledRequestRow = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+}));
+
+const StyledDateRow = styled("div")(() => ({
+  marginTop: theme.spacing(2),
+  display: "flex",
+  flexDirection: "column",
+  width: "72%",
+}));
+
+const StyledDatepicker = styled(Datepicker)(() => ({
+  marginBottom: theme.spacing(2),
+}));
+
+const StyledHelpText = styled(Typography)(() => ({
+  marginTop: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+}));
+
+const StyledRequestField = styled(TextField)(() => ({
+  marginTop: theme.spacing(2),
+}));
+
+const StyledSendActions = styled(CardActions)(() => ({
+  display: "flex",
+  justifyContent: "flex-end",
+  marginTop: theme.spacing(2),
 }));
 
 interface NewHostRequestProps {
@@ -82,7 +76,6 @@ export default function NewHostRequest({
   setIsRequesting,
 }: NewHostRequestProps) {
   const { t } = useTranslation([GLOBAL, PROFILE]);
-  const classes = useStyles();
   const isPostBetaEnabled = process.env.NEXT_PUBLIC_IS_POST_BETA_ENABLED;
   const [numVisitors, setNumVisitors] = useState(1);
   const user = useProfileUser();
@@ -100,21 +93,16 @@ export default function NewHostRequest({
     defaultValues: { hostUserId: user.userId },
   });
 
-  const { error, mutate } = useMutation<
-    number,
-    RpcError,
-    CreateHostRequestWrapper
-  >(
-    (data: CreateHostRequestWrapper) => {
+  const { error, mutate } = useMutation({
+    mutationFn: (data: CreateHostRequestWrapper) => {
       return service.requests.createHostRequest(data);
     },
-    {
-      onSuccess: () => {
-        setIsRequesting(false);
-        setIsRequestSuccess(true);
-      },
+
+    onSuccess: () => {
+      setIsRequesting(false);
+      setIsRequestSuccess(true);
     },
-  );
+  });
 
   const { isLoading: hostLoading, error: hostError } = useLiteUser(user.userId);
 
@@ -145,19 +133,19 @@ export default function NewHostRequest({
 
   return (
     <>
-      <Typography className={classes.title} variant="h1">
+      <StyledTitle variant="h1">
         {hostLoading ? (
           <Skeleton width="100" />
         ) : (
           t("profile:request_form.send_request", { name: user.name })
         )}
-      </Typography>
+      </StyledTitle>
       {error && <Alert severity="error">{error.message}</Alert>}
       {hostError ? (
         <Alert severity={"error"}>{hostError?.message}</Alert>
       ) : (
         <form onSubmit={onSubmit}>
-          <div className={classes.request}>
+          <StyledRequestRow>
             {isPostBetaEnabled && (
               <Controller
                 name="stayType"
@@ -185,9 +173,8 @@ export default function NewHostRequest({
                 )}
               />
             )}
-            <div className={classes.dateRow}>
-              <Datepicker
-                className={classes.date}
+            <StyledDateRow>
+              <StyledDatepicker
                 control={control}
                 error={!!errors.fromDate}
                 helperText={errors?.fromDate?.message}
@@ -200,8 +187,7 @@ export default function NewHostRequest({
                   validate: (stringDate) => stringDate !== "",
                 }}
               />
-              <Datepicker
-                className={classes.date}
+              <StyledDatepicker
                 control={control}
                 error={!!errors.toDate}
                 helperText={errors?.toDate?.message}
@@ -232,18 +218,18 @@ export default function NewHostRequest({
                   </Select>
                 </>
               )}
-            </div>
-          </div>
-          <Typography variant="body1" className={classes.helpText}>
+            </StyledDateRow>
+          </StyledRequestRow>
+          <StyledHelpText variant="body1">
             <Trans i18nKey="profile:request_form.guide_link_help_text">
               <StyledLink variant="body1" href={howToWriteRequestGuideUrl}>
                 Read our guide
               </StyledLink>{" "}
               on how to write a request that will get accepted.
             </Trans>
-          </Typography>
+          </StyledHelpText>
 
-          <TextField
+          <StyledRequestField
             id="text"
             {...register("text", {
               required: t("profile:request_form.request_description_empty"),
@@ -254,7 +240,6 @@ export default function NewHostRequest({
                 ),
               },
             })}
-            className={classes.requestField}
             label={t("profile:request_form.request")}
             minRows={6}
             multiline
@@ -264,14 +249,14 @@ export default function NewHostRequest({
             helperText={errors.text?.message || ""}
             InputLabelProps={{ shrink: true }}
           />
-          <CardActions className={classes.send}>
+          <StyledSendActions>
             <Button onClick={() => setIsRequesting(false)}>
               {t("global:cancel")}
             </Button>
             <Button type="submit" onClick={onSubmit}>
               {t("global:send")}
             </Button>
-          </CardActions>
+          </StyledSendActions>
         </form>
       )}
     </>
