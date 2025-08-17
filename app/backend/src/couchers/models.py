@@ -182,7 +182,7 @@ class User(Base):
     heard_about_us_source = Column(
         Enum(HeardAboutUs),
         server_default=text("'source_friend'"),  # Use the string representation of the Enum value
-        nullable=False,
+        nullable=True,
     )
     heard_about_us_source_other = Column(String, nullable=True, server_default=text("''"))
 

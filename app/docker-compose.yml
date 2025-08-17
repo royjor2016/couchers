@@ -16,6 +16,7 @@ services:
     restart: unless-stopped
     ports:
       - 6545:6545
+    platform: linux/amd64
   backend:
     build: backend
     env_file: backend.dev.env
