@@ -214,7 +214,7 @@ def test_user_model_to_pb_ghost_user(db, flag):
     assert user_pb.friends == api_pb2.User.FriendshipStatus.NOT_FRIENDS
     assert user_pb.avatar_url == ""
     assert user_pb.avatar_thumbnail_url == ""
-    assert user_pb.has_strong_verification is False
+    assert not user_pb.has_strong_verification
 
 
 def test_lite_coords(db):
