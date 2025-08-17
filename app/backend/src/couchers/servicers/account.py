@@ -109,6 +109,20 @@ profilepublicitysetting2api = {
     ProfilePublicVisibility.full: account_pb2.PROFILE_PUBLIC_VISIBILITY_FULL,
 }
 
+HeardAboutUs2sql = {
+    "friend": 1,
+    "social_media": 2,
+    "search_engine": 3,
+    "other": 4,
+    "event": 5,
+    "couchsurfing": 6,
+    "other_hosting_platform": 7,
+    "news_article": 8,
+    "advertisement": 9,
+}
+
+HeardAboutUs2api = {v: k for k, v in HeardAboutUs2sql.items()}
+
 MAX_PAGINATION_LENGTH = 50
 
 
@@ -179,6 +193,7 @@ class Account(account_pb2_grpc.AccountServicer):
             ui_language_preference=user.ui_language_preference,
             profile_public_visibility=profilepublicitysetting2api[user.public_visibility],
             is_volunteer=volunteer is not None,
+            heard_about_us = user.heard_about_us,
             **get_strong_verification_fields(session, user),
         )
 
