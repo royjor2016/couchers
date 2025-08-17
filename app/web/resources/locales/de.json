@@ -248,6 +248,9 @@
         "sv": "Schwedisch",
         "uk": "Ukrainisch",
         "zh-Hant": "Chinesisch (Traditionell)",
-        "nl": "Niederländisch"
-    }
+        "nl": "Niederländisch",
+        "ca": "Katalan"
+    },
+    "back": "Zurück",
+    "save_changes": "Änderungen speichern"
 }
