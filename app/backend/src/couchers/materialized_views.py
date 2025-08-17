@@ -146,8 +146,6 @@ def make_lite_users_selectable(create=False):
             User.has_completed_profile.label("has_completed_profile"),
             User.has_completed_my_home.label("has_completed_my_home"),
             func.coalesce(strong_verification_subquery.c.true, False).label("has_strong_verification"),
-            User.is_banned.label("is_banned"),
-            User.is_deleted.label("is_deleted"),
         )
         .select_from(User)
         .outerjoin(Upload, Upload.key == User.avatar_key)

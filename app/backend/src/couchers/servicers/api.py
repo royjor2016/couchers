@@ -1121,21 +1121,6 @@ def user_model_to_pb(db_user, session, context):
 
 
 def lite_user_to_pb(lite_user: LiteUser):
-    if lite_user.is_deleted or lite_user.is_banned:
-        return api_pb2.LiteUser(
-            user_id=lite_user.id,
-            username=f"ghost{lite_user.id}",
-            name="Deleted user",
-            city="",
-            age=0,
-            avatar_url=None,
-            avatar_thumbnail_url=None,
-            lat=0,
-            lng=0,
-            radius=0,
-            has_strong_verification=False,
-        )
-
     lat, lng = get_coordinates(lite_user.geom) or (0, 0)
 
     return api_pb2.LiteUser(

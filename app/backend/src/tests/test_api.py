@@ -12,7 +12,7 @@ from couchers.materialized_views import refresh_materialized_views_rapid
 from couchers.models import FriendRelationship, FriendStatus, RateLimitAction, User
 from couchers.rate_limits.definitions import RATE_LIMIT_DEFINITIONS, RATE_LIMIT_INTERVAL_STRING
 from couchers.resources import get_badge_dict
-from couchers.servicers.api import lite_user_to_pb, user_model_to_pb
+from couchers.servicers.api import user_model_to_pb
 from couchers.sql import couchers_select as select
 from couchers.utils import create_coordinate, to_aware_datetime
 from proto import api_pb2, jail_pb2, notifications_pb2
@@ -310,34 +310,6 @@ def test_lite_get_user(db):
         assert res.user_id == user2.id
         assert res.username == user2.username
         assert res.name == user2.name
-
-
-@pytest.mark.parametrize("flag", ["is_deleted", "is_banned"])
-def test_lite_user_to_pb_ghost_user(flag):
-    user, _ = generate_user()
-
-    with session_scope() as session:
-        u = session.merge(user)
-        setattr(u, flag, True)
-        session.commit()
-
-    refresh_materialized_views_rapid(None)
-
-    with session_scope() as session:
-        lite_user = session.execute(select(User).where(User.id == user.id)).scalar_one()
-        user_pb = lite_user_to_pb(lite_user)
-
-    assert user_pb.user_id == user.id
-    assert user_pb.username == f"ghost{user.id}"
-    assert user_pb.name == "Deleted user"
-    assert user_pb.city == ""
-    assert user_pb.age == 0
-    assert user_pb.avatar_url == ""
-    assert user_pb.avatar_thumbnail_url == ""
-    assert user_pb.lat == 0
-    assert user_pb.lng == 0
-    assert user_pb.radius == 0
-    assert user_pb.has_strong_verification is False
 
 
 def test_GetLiteUsers(db):
