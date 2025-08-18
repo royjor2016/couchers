@@ -156,11 +156,6 @@ def test_migrations(testconfig):
         # filter out alembic tables
         s = "\n-- ".join(x for x in s.split("\n-- ") if not x.startswith("Name: alembic_"))
 
-        # pg_dump 17 introduced new \unrestrict / \restrict lines with a random token.
-        # These lines differ on every dump even if the schema is identical.
-        # We strip them out to keep the migration vs. model comparison deterministic.
-        s = re.sub(r"^\s*\\(?:unrestrict|restrict)\s+\S+\s*$", "", s, flags=re.MULTILINE)
-
         return strip_leading_whitespace(s.splitlines())
 
     diff = "\n".join(
