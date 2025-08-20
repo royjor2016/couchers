@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import timedelta
 
 import grpc
@@ -6,6 +7,7 @@ from google.protobuf import empty_pb2
 from sqlalchemy.sql import delete, func, or_
 
 from couchers import errors
+from couchers.constants import FUZZY_SIMILARITY_THRESHOLD, FUZZY_TRIGGER_THRESHOLD
 from couchers.crypto import decrypt_page_token, encrypt_page_token
 from couchers.db import can_moderate_node, get_node_parents_recursively
 from couchers.materialized_views import ClusterAdminCount, ClusterSubscriptionCount
@@ -143,6 +145,100 @@ class Communities(communities_pb2_grpc.CommunitiesServicer):
             communities=communities_to_pb(session, nodes[:page_size], context),
             next_page_token=encrypt_page_token(str(offset + page_size)) if len(nodes) > page_size else None,
         )
+
+    def SearchCommunities(self, request, context, session):
+        raw_q = (request.query or "").strip()
+        if not raw_q:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "query_is_empty")
+
+        page_size = min(MAX_PAGINATION_LENGTH, request.page_size or MAX_PAGINATION_LENGTH)
+        offset = int(decrypt_page_token(request.page_token)) if request.page_token else 0
+
+        if raw_q.startswith("#"):
+            # find all tokens that start with '#' followed by digits
+            tokens = re.findall(r"#\s*\d+", raw_q)
+            ids = []
+            seen = set()
+            for tok in tokens:
+                num = tok.lstrip("#").strip()
+                if not num.isdigit():
+                    context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid_id_format")
+                i = int(num)
+                if i not in seen:
+                    seen.add(i)
+                    ids.append(i)
+
+            if not ids:
+                context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid_id_format")
+
+            # paginate over the explicit ID list
+            slice_ids = ids[offset : offset + page_size]
+            if not slice_ids:
+                return communities_pb2.SearchCommunitiesRes(communities=[])
+
+            rows = session.execute(select(Node).where(Node.id.in_(slice_ids))).scalars().all()
+            by_id = {n.id: n for n in rows}
+            ordered_nodes = [by_id[i] for i in slice_ids if i in by_id]
+
+            return communities_pb2.SearchCommunitiesRes(
+                communities=communities_to_pb(session, ordered_nodes, context),
+                next_page_token=(
+                    encrypt_page_token(str(offset + page_size)) if (offset + page_size) < len(ids) else None
+                ),
+            )
+
+        # --- Keyword search (simple substring match, case-insensitive) ---
+        nodes = (
+            session.execute(
+                select(Node)
+                .join(Cluster, Cluster.parent_node_id == Node.id)
+                .where(Cluster.is_official_cluster)
+                # condition: cluster name contains the query substring (case-insensitive)
+                .where(Cluster.name.ilike(f"%{raw_q}%"))
+                .order_by(Cluster.name, Node.id.asc())
+                .limit(page_size + 1)
+                .offset(offset)
+            )
+            .scalars()
+            .all()
+        )
+
+        # If keyword search returned enough results, return them directly
+        if len(nodes) >= FUZZY_TRIGGER_THRESHOLD:
+            return communities_pb2.SearchCommunitiesRes(
+                communities=communities_to_pb(session, nodes[:page_size], context),
+                next_page_token=encrypt_page_token(str(offset + page_size)) if len(nodes) > page_size else None,
+            )
+
+        # --- Fuzzy fallback (catch typos using pg_trgm similarity) ---
+        # fuzzy is triggered only if keyword results < FUZZY_TRIGGER_THRESHOLD
+        # and if query length >= 3
+        if len(raw_q) >= 3:
+            # Requires extension pg_trgm in PostgreSQL:
+            similarity = func.similarity(func.unaccent(Cluster.name), func.unaccent(raw_q))
+
+            fuzzy_query = (
+                select(Node)
+                .join(Cluster, Cluster.parent_node_id == Node.id)
+                .where(Cluster.is_official_cluster)
+                .where(similarity > FUZZY_SIMILARITY_THRESHOLD)
+                .order_by(similarity.desc(), Cluster.name.asc(), Node.id.asc())
+                .limit(page_size + 1)
+                .offset(offset)
+            )
+
+            fuzzy_nodes = session.execute(fuzzy_query).scalars().all()
+
+            if fuzzy_nodes:
+                return communities_pb2.SearchCommunitiesRes(
+                    communities=communities_to_pb(session, fuzzy_nodes[:page_size], context),
+                    next_page_token=encrypt_page_token(str(offset + page_size))
+                    if len(fuzzy_nodes) > page_size
+                    else None,
+                )
+
+        # If nothing was found at all
+        return communities_pb2.SearchCommunitiesRes(communities=[])
 
     def ListGroups(self, request, context, session):
         page_size = min(MAX_PAGINATION_LENGTH, request.page_size or MAX_PAGINATION_LENGTH)
