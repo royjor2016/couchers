@@ -66,3 +66,7 @@ HOST_REQUEST_REMINDER_INTERVAL = timedelta(days=2)
 ANTIBOT_FREQ = timedelta(hours=48)
 
 EVENT_REMINDER_TIMEDELTA = timedelta(hours=24)
+
+GHOST_USER_DISPLAY_NAME = "Deleted user"
+
+GHOST_USERNAME_PREFIX = "ghost"

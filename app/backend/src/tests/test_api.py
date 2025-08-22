@@ -6,6 +6,7 @@ import pytest
 from google.protobuf import empty_pb2, wrappers_pb2
 
 from couchers import errors
+from couchers.constants import GHOST_USER_DISPLAY_NAME, GHOST_USERNAME_PREFIX
 from couchers.db import session_scope
 from couchers.jobs.handlers import update_badges
 from couchers.materialized_views import refresh_materialized_views_rapid
@@ -185,8 +186,8 @@ def test_user_model_to_pb_ghost_user(db, flag):
         user_pb = user_model_to_pb(db_user, session, context)
 
     assert user_pb.user_id == user2.id
-    assert user_pb.username == f"ghost{user2.id}"
-    assert user_pb.name == "Deleted user"
+    assert user_pb.username == f"{GHOST_USERNAME_PREFIX}{user2.id}"
+    assert user_pb.name == GHOST_USER_DISPLAY_NAME
     assert user_pb.lat == 0
     assert user_pb.lng == 0
     assert user_pb.radius == 0
@@ -215,6 +216,38 @@ def test_user_model_to_pb_ghost_user(db, flag):
     assert user_pb.avatar_url == ""
     assert user_pb.avatar_thumbnail_url == ""
     assert not user_pb.has_strong_verification
+
+
+@pytest.mark.parametrize("flag", ["is_deleted", "is_banned"])
+def test_admin_viewing_ghost_users_sees_full_profile(db, flag):
+    admin, _ = generate_user()
+    target, _ = generate_user()
+
+    # Make target a ghostable user; make caller an admin
+    with session_scope() as session:
+        a = session.merge(admin)
+        t = session.merge(target)
+        setattr(t, flag, True)
+        a.is_superuser = True
+        session.commit()
+
+    with session_scope() as session:
+        db_user = session.execute(select(User).where(User.id == target.id)).scalar_one()
+        context = SimpleNamespace(user_id=admin.id)
+        user_pb = user_model_to_pb(db_user, session, context)
+
+    assert user_pb.user_id == target.id
+    assert user_pb.username == target.username
+    assert user_pb.name == target.name
+    assert user_pb.city == target.city
+    assert user_pb.name != GHOST_USER_DISPLAY_NAME
+    assert not user_pb.username.startswith(GHOST_USERNAME_PREFIX)
+    assert user_pb.hosting_status in (
+        api_pb2.HOSTING_STATUS_UNKNOWN,
+        api_pb2.HOSTING_STATUS_CAN_HOST,
+        api_pb2.HOSTING_STATUS_MAYBE,
+        api_pb2.HOSTING_STATUS_CANT_HOST,
+    )
 
 
 def test_lite_coords(db):

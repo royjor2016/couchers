@@ -7,6 +7,7 @@ from sqlalchemy.sql import and_, delete, distinct, func, intersect, or_, union
 
 from couchers import errors, urls
 from couchers.config import config
+from couchers.constants import GHOST_USER_DISPLAY_NAME, GHOST_USERNAME_PREFIX
 from couchers.crypto import b64encode, generate_hash_signature, random_hex
 from couchers.helpers.strong_verification import get_strong_verification_fields
 from couchers.materialized_views import LiteUser, UserResponseRate
@@ -974,10 +975,11 @@ def user_model_to_pb(db_user, session, context):
         verification_score += 1.0 * db_user.phone_is_verified
 
     if (db_user.is_deleted or db_user.is_banned) and not caller_is_admin:
+        # Return an anonymized "ghost" user profile for deleted or banned users
         return api_pb2.User(
             user_id=db_user.id,
-            username=f"ghost{db_user.id}",
-            name="Deleted user",
+            username=f"{GHOST_USERNAME_PREFIX}{db_user.id}",
+            name=GHOST_USER_DISPLAY_NAME,
             city="",
             hometown="",
             timezone="",
@@ -1009,6 +1011,7 @@ def user_model_to_pb(db_user, session, context):
             **response_rate_to_pb(None),
         )
     else:
+        # Return the full user profile with all available fields
         user = api_pb2.User(
             user_id=db_user.id,
             username=db_user.username,
