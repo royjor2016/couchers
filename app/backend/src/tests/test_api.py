@@ -6,7 +6,7 @@ import pytest
 from google.protobuf import empty_pb2, wrappers_pb2
 
 from couchers import errors
-from couchers.constants import GHOST_USER_DISPLAY_NAME, GHOST_USERNAME_PREFIX
+from couchers.constants import GHOST_USER_DISPLAY_NAME, GHOST_USERNAME
 from couchers.db import session_scope
 from couchers.jobs.handlers import update_badges
 from couchers.materialized_views import refresh_materialized_views_rapid
@@ -186,7 +186,7 @@ def test_user_model_to_pb_ghost_user(db, flag):
         user_pb = user_model_to_pb(db_user, session, context)
 
     assert user_pb.user_id == user2.id
-    assert user_pb.username == f"{GHOST_USERNAME_PREFIX}{user2.id}"
+    assert user_pb.username == GHOST_USERNAME
     assert user_pb.name == GHOST_USER_DISPLAY_NAME
     assert user_pb.lat == 0
     assert user_pb.lng == 0
@@ -195,8 +195,8 @@ def test_user_model_to_pb_ghost_user(db, flag):
     assert user_pb.community_standing == 0.0
     assert user_pb.num_references == 0
     assert user_pb.age == 0
-    assert user_pb.hosting_status == api_pb2.HOSTING_STATUS_UNKNOWN
-    assert user_pb.meetup_status == api_pb2.MEETUP_STATUS_UNKNOWN
+    assert user_pb.hosting_status == 0
+    assert user_pb.meetup_status == 0
     assert user_pb.city == ""
     assert user_pb.hometown == ""
     assert user_pb.timezone == ""
@@ -241,7 +241,7 @@ def test_admin_viewing_ghost_users_sees_full_profile(db, flag):
     assert user_pb.name == target.name
     assert user_pb.city == target.city
     assert user_pb.name != GHOST_USER_DISPLAY_NAME
-    assert not user_pb.username.startswith(GHOST_USERNAME_PREFIX)
+    assert user_pb.username != GHOST_USERNAME
     assert user_pb.hosting_status in (
         api_pb2.HOSTING_STATUS_UNKNOWN,
         api_pb2.HOSTING_STATUS_CAN_HOST,

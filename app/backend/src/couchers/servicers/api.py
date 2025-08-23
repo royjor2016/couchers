@@ -7,7 +7,7 @@ from sqlalchemy.sql import and_, delete, distinct, func, intersect, or_, union
 
 from couchers import errors, urls
 from couchers.config import config
-from couchers.constants import GHOST_USER_DISPLAY_NAME, GHOST_USERNAME_PREFIX
+from couchers.constants import GHOST_USER_DISPLAY_NAME, GHOST_USERNAME
 from couchers.crypto import b64encode, generate_hash_signature, random_hex
 from couchers.helpers.strong_verification import get_strong_verification_fields
 from couchers.materialized_views import LiteUser, UserResponseRate
@@ -978,37 +978,8 @@ def user_model_to_pb(db_user, session, context):
         # Return an anonymized "ghost" user profile for deleted or banned users
         return api_pb2.User(
             user_id=db_user.id,
-            username=f"{GHOST_USERNAME_PREFIX}{db_user.id}",
+            username=GHOST_USERNAME,
             name=GHOST_USER_DISPLAY_NAME,
-            city="",
-            hometown="",
-            timezone="",
-            lat=0,
-            lng=0,
-            radius=0,
-            verification=0.0,
-            community_standing=0.0,
-            num_references=num_references,
-            gender="",
-            pronouns="",
-            age=0,
-            hosting_status=api_pb2.HOSTING_STATUS_UNKNOWN,
-            meetup_status=api_pb2.MEETUP_STATUS_UNKNOWN,
-            occupation="",
-            education="",
-            about_me="",
-            things_i_like="",
-            about_place="",
-            language_abilities=[],
-            regions_visited=[],
-            regions_lived=[],
-            additional_information="",
-            friends=api_pb2.User.FriendshipStatus.NOT_FRIENDS,
-            avatar_url=None,
-            avatar_thumbnail_url=None,
-            badges=[],
-            **get_strong_verification_fields(session, db_user),
-            **response_rate_to_pb(None),
         )
     else:
         # Return the full user profile with all available fields
