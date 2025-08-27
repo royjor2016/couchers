@@ -67,8 +67,4 @@ ANTIBOT_FREQ = timedelta(hours=48)
 
 EVENT_REMINDER_TIMEDELTA = timedelta(hours=24)
 
-# if keyword results >= this, skip fuzzy
-FUZZY_TRIGGER_THRESHOLD = 1
-
-# pg_trgm similarity cutoff
 FUZZY_SIMILARITY_THRESHOLD = 0.30

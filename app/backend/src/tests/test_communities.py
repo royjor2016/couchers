@@ -1009,102 +1009,115 @@ def test_enforce_community_memberships_for_user(testing_communities):
 
 
 class TestSearchCommunities:
-    def test_search_by_hash_single_and_invalid(testing_communities):
+    def test_empty_query_aborts(self):
         with session_scope() as session:
-            user1_id, token1 = get_user_id_and_token(session, "user1")
-            w_id = get_community_id(session, "Global")
+            _, token = get_user_id_and_token(session, "user1")
 
-        with communities_session(token1) as api:
-            # single valid: "#<id>"
-            res = api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query=f"#{w_id}"))
-            assert [c.community_id for c in res.communities] == [w_id]
-            assert not res.next_page_token
-
-            # invalid: "#" with no digits
+        with communities_session(token) as api:
             with pytest.raises(grpc.RpcError) as err:
-                api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="#   "))
+                api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="   "))
             assert err.value.code() == grpc.StatusCode.INVALID_ARGUMENT
-            assert err.value.details() == "invalid_id_format"
+            assert err.value.details() == "query_is_empty"
 
-            # invalid: "#abc"
+    def test_min_length_lt_3_aborts(self):
+        """
+        len(query) < 3 → return INVALID_ARGUMENT: query_too_short
+        """
+        with session_scope() as session:
+            _, token = get_user_id_and_token(session, "user1")
+
+        with communities_session(token) as api:
             with pytest.raises(grpc.RpcError) as err:
-                api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="#abc"))
+                api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="zz", page_size=5))
             assert err.value.code() == grpc.StatusCode.INVALID_ARGUMENT
-            assert err.value.details() == "invalid_id_format"
+            assert err.value.details() == "query_too_short"
 
-    def test_search_by_hash_multi_with_mixed_separators_and_pagination(self, testing_communities):
+    def test_fuzzy_typo_matches_existing_name(self, testing_communities):
+        """
+        Trigram should match a simple typo (no keyword/substring mode anymore).
+        """
         with session_scope() as session:
-            user1_id, token1 = get_user_id_and_token(session, "user1")
-            ids = [
-                get_community_id(session, "Global"),
-                get_community_id(session, "Country 1"),
-                get_community_id(session, "Country 1, Region 1"),
-            ]
+            _, token = get_user_id_and_token(session, "user1")
+            c1_id = get_community_id(session, "Country 1")
 
-        q = f"# {ids[0]},#{ids[1]} : #   {ids[2]}"
+        with communities_session(token) as api:
+            res = api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="Coutri 1", page_size=5))
+            ids = [c.community_id for c in res.communities]
+            assert c1_id in ids
 
-        with communities_session(token1) as api:
-            # page 1
-            res = api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query=q, page_size=2))
-            assert [c.community_id for c in res.communities] == ids[:2]
-            assert res.next_page_token
-
-            # page 2
-            res2 = api.SearchCommunities(
-                communities_pb2.SearchCommunitiesReq(query=q, page_size=2, page_token=res.next_page_token)
-            )
-            assert [c.community_id for c in res2.communities] == ids[2:]
-            assert not res2.next_page_token
-
-    def test_search_keyword_basic_and_case_insensitive_and_pagination(testing_communities):
+    def test_word_similarity_fallback(self, testing_communities):
+        """
+        Query 'city' should match 'Country 1, Region 1, City 1' via word_similarity fallback (<% operator).
+        """
         with session_scope() as session:
-            user1_id, token1 = get_user_id_and_token(session, "user1")
+            _, token = get_user_id_and_token(session, "user1")
+            city1_id = get_community_id(session, "Country 1, Region 1, City 1")  # переименовал для ясности
+
+        with communities_session(token) as api:
+            res = api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="city", page_size=5))
+            ids = [c.community_id for c in res.communities]
+            assert city1_id in ids
+
+    def test_pagination_and_union_of_results_contains_expected_cluster(self, testing_communities):
+        """
+        For a reasonable query ('Country 1'), trigram returns multiple results.
+        Verify pagination mechanics across all pages and that the union
+        contains known descendants.
+        """
+        with session_scope() as session:
+            _, token = get_user_id_and_token(session, "user1")
             c1_id = get_community_id(session, "Country 1")
             c1r1_id = get_community_id(session, "Country 1, Region 1")
             c1r1c1_id = get_community_id(session, "Country 1, Region 1, City 1")
             c1r1c2_id = get_community_id(session, "Country 1, Region 1, City 2")
             c1r2_id = get_community_id(session, "Country 1, Region 2")
             c1r2c1_id = get_community_id(session, "Country 1, Region 2, City 1")
+            expected = {c1_id, c1r1_id, c1r1c1_id, c1r1c2_id, c1r2_id, c1r2c1_id}
 
-        expected_all = [c1_id, c1r1_id, c1r1c1_id, c1r1c2_id, c1r2_id, c1r2c1_id]
+        page_size = 3
+        all_ids = []
+        page_token = None
+        with communities_session(token) as api:
+            for _ in range(20):
+                req = communities_pb2.SearchCommunitiesReq(
+                    query="Country 1", page_size=page_size, page_token=page_token
+                )
+                res = api.SearchCommunities(req)
+                ids = [c.community_id for c in res.communities]
 
-        with communities_session(token1) as api:
-            # case-insensitive
-            res = api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="country 1", page_size=3))
-            assert [c.community_id for c in res.communities] == expected_all[:3]
-            assert res.next_page_token
+                assert len(ids) <= page_size
+                assert len(ids) == len(set(ids))
 
-            # next page
-            res2 = api.SearchCommunities(
-                communities_pb2.SearchCommunitiesReq(query="Country 1", page_size=3, page_token=res.next_page_token)
-            )
-            assert [c.community_id for c in res2.communities] == expected_all[3:]
-            assert not res2.next_page_token
+                all_ids.extend(ids)
 
-    def test_search_fuzzy_triggers_only_when_no_keyword_results_and_matches_typo(testing_communities):
+                if not res.next_page_token:
+                    break
+                page_token = res.next_page_token
+
+        assert expected.issubset(set(all_ids))
+        assert c1_id in all_ids
+
+    def test_invalid_page_token_aborts(self):
+        with session_scope() as session:
+            _, token = get_user_id_and_token(session, "user1")
+
+        with communities_session(token) as api:
+            with pytest.raises(grpc.RpcError) as err:
+                api.SearchCommunities(
+                    communities_pb2.SearchCommunitiesReq(query="Country 1", page_size=2, page_token="not-a-token")
+                )
+            assert err.value.code() == grpc.StatusCode.INVALID_ARGUMENT
+            assert err.value.details() == "invalid_page_token"
+
+    def test_no_results_returns_empty(self):
         """
-        FUZZY_TRIGGER_THRESHOLD = 1 → fuzzy runs only if keyword returned 0 results.
-        Use a typo that shouldn't match via substring, but should via trigram similarity.
+        For a nonsense query that shouldn't meet the similarity threshold, return empty list.
         """
         with session_scope() as session:
-            user1_id, token1 = get_user_id_and_token(session, "user1")
-            c1_id = get_community_id(session, "Country 1")
+            _, token = get_user_id_and_token(session, "user1")
 
-        with communities_session(token1) as api:
-            # typo: "Coutri 1" (no direct substring match for "Country 1")
-            res = api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="Coutri 1", page_size=5))
-            ids = [c.community_id for c in res.communities]
-            assert c1_id in ids  # fuzzy should include "Country 1"
-
-    def test_search_no_fuzzy_for_short_queries_len_lt_3(testing_communities):
-        """
-        len(query) < 3 → fuzzy must not run; expect empty results for nonsense short query.
-        """
-        with session_scope() as session:
-            user1_id, token1 = get_user_id_and_token(session, "user1")
-
-        with communities_session(token1) as api:
-            res = api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="zz", page_size=5))
+        with communities_session(token) as api:
+            res = api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="qwertyuiopasdf", page_size=5))
             assert res.communities == []
             assert not res.next_page_token
 
