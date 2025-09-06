@@ -217,9 +217,7 @@ class API(api_pb2_grpc.APIServicer):
         )
 
     def GetUser(self, request, context, session):
-        user = session.execute(
-            select(User).where_users_visible(context).where_username_or_id(request.user)
-        ).scalar_one_or_none()
+        user = session.execute(select(User).where_username_or_id(request.user)).scalar_one_or_none()
 
         if not user:
             context.abort(grpc.StatusCode.NOT_FOUND, errors.USER_NOT_FOUND)
@@ -900,14 +898,10 @@ def get_num_references(session, user_ids):
     )
 
 
-def user_model_to_pb(db_user, session, context):
+def user_model_to_pb(db_user, session, context, is_admin_should_show_invisible=False):
     # note that this function should work also for banned/deleted users as it's called from Admin.GetUser
     # note that this function is sometimes called by a logged out user, in which case context comes from make_logged_out_context
-    caller_is_admin = False
-    caller_id = getattr(context, "_user_id", None) or getattr(context, "user_id", None)
-    if caller_id:
-        caller = session.get(User, caller_id)
-        caller_is_admin = bool(caller and caller.is_superuser)
+    caller_is_admin = is_admin_should_show_invisible
 
     num_references = get_num_references(session, [db_user.id]).get(db_user.id, 0)
 

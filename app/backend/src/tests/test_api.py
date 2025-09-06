@@ -1,5 +1,4 @@
 from datetime import timedelta
-from types import SimpleNamespace
 
 import grpc
 import pytest
@@ -10,13 +9,12 @@ from couchers.constants import GHOST_USER_DISPLAY_NAME, GHOST_USERNAME
 from couchers.db import session_scope
 from couchers.jobs.handlers import update_badges
 from couchers.materialized_views import refresh_materialized_views_rapid
-from couchers.models import FriendRelationship, FriendStatus, RateLimitAction, User
+from couchers.models import FriendRelationship, FriendStatus, RateLimitAction
 from couchers.rate_limits.definitions import RATE_LIMIT_DEFINITIONS, RATE_LIMIT_INTERVAL_STRING
 from couchers.resources import get_badge_dict
-from couchers.servicers.api import user_model_to_pb
 from couchers.sql import couchers_select as select
 from couchers.utils import create_coordinate, to_aware_datetime
-from proto import api_pb2, jail_pb2, notifications_pb2
+from proto import admin_pb2, api_pb2, jail_pb2, notifications_pb2
 from tests.test_fixtures import (  # noqa
     api_session,
     blocking_session,
@@ -33,6 +31,7 @@ from tests.test_fixtures import (  # noqa
     real_jail_session,
     testconfig,
 )
+from tests.test_fixtures import real_admin_session as admin_session
 
 
 @pytest.fixture(autouse=True)
@@ -172,18 +171,16 @@ def test_get_user(db):
 
 @pytest.mark.parametrize("flag", ["is_deleted", "is_banned"])
 def test_user_model_to_pb_ghost_user(db, flag):
-    user1, _ = generate_user()
+    user1, token1 = generate_user()
     user2, _ = generate_user()
 
     with session_scope() as session:
-        u2 = session.merge(user2)
-        setattr(u2, flag, True)
+        db_user2 = session.merge(user2)
+        setattr(db_user2, flag, True)
         session.commit()
 
-    with session_scope() as session:
-        db_user = session.execute(select(User).where(User.id == user2.id)).scalar_one()
-        context = SimpleNamespace(user_id=user1.id)
-        user_pb = user_model_to_pb(db_user, session, context)
+    with api_session(token1) as api:
+        user_pb = api.GetUser(api_pb2.GetUserReq(user=user2.username))
 
     assert user_pb.user_id == user2.id
     assert user_pb.username == GHOST_USERNAME
@@ -220,26 +217,23 @@ def test_user_model_to_pb_ghost_user(db, flag):
 
 @pytest.mark.parametrize("flag", ["is_deleted", "is_banned"])
 def test_admin_viewing_ghost_users_sees_full_profile(db, flag):
-    admin, _ = generate_user()
-    target, _ = generate_user()
+    admin, token_admin = generate_user()
+    user, _ = generate_user()
 
-    # Make target a ghostable user; make caller an admin
     with session_scope() as session:
-        a = session.merge(admin)
-        t = session.merge(target)
-        setattr(t, flag, True)
-        a.is_superuser = True
+        admin_db = session.merge(admin)
+        user_db = session.merge(user)
+        setattr(user_db, flag, True)
+        admin_db.is_superuser = True
         session.commit()
 
-    with session_scope() as session:
-        db_user = session.execute(select(User).where(User.id == target.id)).scalar_one()
-        context = SimpleNamespace(user_id=admin.id)
-        user_pb = user_model_to_pb(db_user, session, context)
+    with admin_session(token_admin) as api:
+        user_pb = api.GetUser(admin_pb2.GetUserReq(user=user.username))
 
-    assert user_pb.user_id == target.id
-    assert user_pb.username == target.username
-    assert user_pb.name == target.name
-    assert user_pb.city == target.city
+    assert user_pb.user_id == user.id
+    assert user_pb.username == user.username
+    assert user_pb.name == user.name
+    assert user_pb.city == user.city
     assert user_pb.name != GHOST_USER_DISPLAY_NAME
     assert user_pb.username != GHOST_USERNAME
     assert user_pb.hosting_status in (

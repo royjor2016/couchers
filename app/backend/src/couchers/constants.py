@@ -69,4 +69,4 @@ EVENT_REMINDER_TIMEDELTA = timedelta(hours=24)
 
 GHOST_USER_DISPLAY_NAME = "Deleted user"
 
-GHOST_USERNAME = "Ghost"
+GHOST_USERNAME = "ghost"
