@@ -9,6 +9,7 @@ import {
 import Alert from "components/Alert";
 import Button from "components/Button";
 import Select from "components/Select";
+import Snackbar from "components/Snackbar";
 import {
   parkingDetailsLabels,
   sleepingArrangementLabelsShort,
@@ -222,13 +223,22 @@ export default function HostingPreferenceForm({
     isError: updateError,
   } = useUpdateHostingPreferences();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
-  const { control, register, handleSubmit, formState, watch, setValue } =
-    useForm<HostingPreferenceData>({
-      mode: "onBlur",
-      shouldFocusError: true,
-      defaultValues: user,
-    });
+  const {
+    control,
+    register,
+    handleSubmit,
+    formState,
+    watch,
+    setValue,
+    reset,
+    getValues,
+  } = useForm<HostingPreferenceData>({
+    mode: "onBlur",
+    shouldFocusError: true,
+    defaultValues: user,
+  });
 
   const lastMinute = watch("lastMinute");
   const acceptsKids = watch("acceptsKids");
@@ -292,6 +302,12 @@ export default function HostingPreferenceForm({
         setMutationError: setErrorMessage,
       },
       {
+        onSuccess: () => {
+          // Reset form dirty state to hide save bar
+          const currentValues = getValues();
+          reset(currentValues, { keepValues: true, keepDirty: false });
+          setShowSuccessToast(true);
+        },
         // Scroll to top on submission error
         onError: () => {
           window.scroll({ top: 0, behavior: "smooth" });
@@ -355,7 +371,7 @@ export default function HostingPreferenceForm({
               })}
               label={t("profile:home_info_headings.max_guests")}
               type="number"
-              inputProps={{ min: 1, max: 10 }}
+              slotProps={{ input: { inputProps: { min: 1, max: 10 } } }}
               error={!!errors?.maxGuests?.message}
               helperText={errors?.maxGuests?.message}
             />
@@ -423,26 +439,32 @@ export default function HostingPreferenceForm({
                     optionLabelMap={sleepingArrangementLabelsShort(t)}
                   />
                   <SleepingArrangementKey>
-                    <KeyTitle>What these options mean:</KeyTitle>
+                    <KeyTitle>{t("profile:what_options_mean")}:</KeyTitle>
                     <KeyItem>
                       <KeyBullet />
                       <KeyText>
-                        <strong>Private space:</strong>{" "}
-                        {t("profile:sleeping_arrangement.private")}
+                        <strong>
+                          {t("profile:sleeping_arrangement.private_short")}
+                        </strong>{" "}
+                        {`(${t("profile:sleeping_arrangement.private")})`}
                       </KeyText>
                     </KeyItem>
                     <KeyItem>
                       <KeyBullet />
                       <KeyText>
-                        <strong>Common room:</strong>{" "}
-                        {t("profile:sleeping_arrangement.common")}
+                        <strong>
+                          {t("profile:sleeping_arrangement.common_short")}
+                        </strong>{" "}
+                        {`(${t("profile:sleeping_arrangement.common")})`}
                       </KeyText>
                     </KeyItem>
                     <KeyItem>
                       <KeyBullet />
                       <KeyText>
-                        <strong>Shared room:</strong>{" "}
-                        {t("profile:sleeping_arrangement.shared_room")}
+                        <strong>
+                          {t("profile:sleeping_arrangement.shared_room_short")}:
+                        </strong>{" "}
+                        {`(${t("profile:sleeping_arrangement.shared_room")})`}
                       </KeyText>
                     </KeyItem>
                   </SleepingArrangementKey>
@@ -650,6 +672,15 @@ export default function HostingPreferenceForm({
             />
           </FieldGroup>
         </ProfileSection>
+
+        {showSuccessToast && (
+          <Snackbar
+            severity="success"
+            onClose={() => setShowSuccessToast(false)}
+          >
+            {t("profile:hosting_preferences_success_message")}
+          </Snackbar>
+        )}
 
         {/* Bottom spacer to prevent content from being hidden behind sticky bar */}
         <BottomSpacer />
