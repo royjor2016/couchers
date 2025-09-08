@@ -17,6 +17,8 @@ export const facebookURL = "https://www.facebook.com/Couchers.org";
 export const helpCenterURL = "https://help.couchers.org";
 export const githubUpdatesURL =
   "https://github.com/Couchers-org/couchers/commits/develop";
+export const newsletterSignupURL =
+  "https://newsletter.couchers.org/subscription/form";
 
 export const translateJobURL = "https://couchers.org/volunteer/translator";
 
@@ -39,6 +41,8 @@ export const featurePreviewRoute = "/preview";
 export const confirmChangeEmailRoute = "/confirm-email";
 
 export const signupRoute = "/signup";
+export const inviteRoute = "/invite";
+export const inviteCodesRoute = "/invite-codes";
 
 export const settingsRoute = "/account-settings";
 export const notificationSettingsRoute = `${settingsRoute}/notifications`;
