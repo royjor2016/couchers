@@ -146,84 +146,30 @@ class Communities(communities_pb2_grpc.CommunitiesServicer):
         )
 
     def SearchCommunities(self, request, context, session):
-        raw_q = (request.query or "").strip()
-        if not raw_q:
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "query_is_empty")
-        if len(raw_q) < 3:
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "query_too_short")
+        raw_query = request.query.strip()
+        if not raw_query:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, errors.QUERY_IS_EMPTY)
+        if len(raw_query) < 3:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, errors.QUERY_TOO_SHORT)
 
-        req_size = request.page_size or MAX_PAGINATION_LENGTH
-        page_size = max(1, min(MAX_PAGINATION_LENGTH, req_size))
+        page_size = min(MAX_PAGINATION_LENGTH, request.page_size or MAX_PAGINATION_LENGTH)
 
-        # page_token → offset with validation
-        try:
-            offset = int(decrypt_page_token(request.page_token)) if request.page_token else 0
-            if offset < 0:
-                raise ValueError
-        except Exception:
-            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid_page_token")
-
-        # unaccented expressions (used across all branches)
         unaccented_name = func.unaccent(Cluster.name)
-        unaccented_query = func.unaccent(raw_q)
+        unaccented_query = func.unaccent(raw_query)
+        word_similarity_score = func.word_similarity(unaccented_query, unaccented_name)
 
-        # main trigram similarity (whole-string)
-        # use default threshold; for very short queries allow down to 0.20
-        sim_threshold = FUZZY_SIMILARITY_THRESHOLD
-        if len(raw_q) <= 4:
-            sim_threshold = min(sim_threshold, 0.20)
-
-        similarity_score = func.similarity(unaccented_name, unaccented_query)
-        word_similarity_score = func.word_similarity(unaccented_name, unaccented_query)
-
-        base_query = select(Node).join(Cluster, Cluster.parent_node_id == Node.id).where(Cluster.is_official_cluster)
-
-        # 3-step search strategy to balance accuracy and recall, avoiding noisy results and preserving index efficiency
-        # 1) primary: similarity(...)
-        q1 = (
-            base_query.where(similarity_score > sim_threshold)
-            .order_by(similarity_score.desc(), Cluster.name.asc(), Node.id.asc())
-            .limit(page_size + 1)
-            .offset(offset)
+        query = (
+            select(Node)
+            .join(Cluster, Cluster.parent_node_id == Node.id)
+            .where(Cluster.is_official_cluster)
+            .where(word_similarity_score > FUZZY_SIMILARITY_THRESHOLD)
+            .order_by(word_similarity_score.desc(), Cluster.name.asc(), Node.id.asc())
+            .limit(page_size)
         )
-        rows = session.execute(q1).scalars().all()
 
-        # 2) fallback: word_similarity(...) via operator `<%` (index-friendly) + explicit threshold
-        if not rows:
-            q2 = (
-                base_query.where(unaccented_name.op("<%")(unaccented_query))
-                .where(word_similarity_score > 0.5)
-                .order_by(word_similarity_score.desc(), Cluster.name.asc(), Node.id.asc())
-                .limit(page_size + 1)
-                .offset(offset)
-            )
-            rows = session.execute(q2).scalars().all()
+        rows = session.execute(query).scalars().all()
 
-        # 3) last resort: word-prefix match (e.g. query "city" → "Country 1, Region 1, City 1")
-        if not rows and len(raw_q) <= 4:
-            q3 = (
-                base_query.where(
-                    or_(
-                        unaccented_name.ilike(raw_q + "%"),
-                        unaccented_name.ilike("% " + raw_q + "%"),
-                    )
-                )
-                .order_by(Cluster.name.asc(), Node.id.asc())
-                .limit(page_size + 1)
-                .offset(offset)
-            )
-            rows = session.execute(q3).scalars().all()
-
-        if not rows:
-            return communities_pb2.SearchCommunitiesRes(communities=[])
-
-        has_next = len(rows) > page_size
-        items = rows[:page_size]
-
-        return communities_pb2.SearchCommunitiesRes(
-            communities=communities_to_pb(session, items, context),
-            next_page_token=encrypt_page_token(str(offset + page_size)) if has_next else None,
-        )
+        return communities_pb2.SearchCommunitiesRes(communities=communities_to_pb(session, rows, context))
 
     def ListGroups(self, request, context, session):
         page_size = min(MAX_PAGINATION_LENGTH, request.page_size or MAX_PAGINATION_LENGTH)

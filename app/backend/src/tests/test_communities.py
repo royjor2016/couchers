@@ -1017,7 +1017,7 @@ class TestSearchCommunities:
             with pytest.raises(grpc.RpcError) as err:
                 api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="   "))
             assert err.value.code() == grpc.StatusCode.INVALID_ARGUMENT
-            assert err.value.details() == "query_is_empty"
+            assert err.value.details() == errors.QUERY_IS_EMPTY
 
     def test_min_length_lt_3_aborts(self):
         """
@@ -1030,11 +1030,11 @@ class TestSearchCommunities:
             with pytest.raises(grpc.RpcError) as err:
                 api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="zz", page_size=5))
             assert err.value.code() == grpc.StatusCode.INVALID_ARGUMENT
-            assert err.value.details() == "query_too_short"
+            assert err.value.details() == errors.QUERY_TOO_SHORT
 
-    def test_fuzzy_typo_matches_existing_name(self, testing_communities):
+    def test_typo_matches_existing_name(self, testing_communities):
         """
-        Trigram should match a simple typo (no keyword/substring mode anymore).
+        Word_similarity should match a simple typo in community name.
         """
         with session_scope() as session:
             _, token = get_user_id_and_token(session, "user1")
@@ -1045,9 +1045,9 @@ class TestSearchCommunities:
             ids = [c.community_id for c in res.communities]
             assert c1_id in ids
 
-    def test_word_similarity_fallback(self, testing_communities):
+    def test_word_similarity_matches_partial_word(self, testing_communities):
         """
-        Query 'city' should match 'Country 1, Region 1, City 1' via word_similarity fallback (<% operator).
+        Query 'city' should match 'Country 1, Region 1, City 1'.
         """
         with session_scope() as session:
             _, token = get_user_id_and_token(session, "user1")
@@ -1058,56 +1058,24 @@ class TestSearchCommunities:
             ids = [c.community_id for c in res.communities]
             assert city1_id in ids
 
-    def test_pagination_and_union_of_results_contains_expected_cluster(self, testing_communities):
+    def test_results_sorted_by_similarity(self, testing_communities):
         """
-        For a reasonable query ('Country 1'), trigram returns multiple results.
-        Verify pagination mechanics across all pages and that the union
-        contains known descendants.
+        Results should be ordered by similarity score (best match first).
+        For query 'Country 1, Region', the full region name should rank higher
+        than deeper descendants like 'City 1'.
         """
         with session_scope() as session:
             _, token = get_user_id_and_token(session, "user1")
-            c1_id = get_community_id(session, "Country 1")
-            c1r1_id = get_community_id(session, "Country 1, Region 1")
-            c1r1c1_id = get_community_id(session, "Country 1, Region 1, City 1")
-            c1r1c2_id = get_community_id(session, "Country 1, Region 1, City 2")
-            c1r2_id = get_community_id(session, "Country 1, Region 2")
-            c1r2c1_id = get_community_id(session, "Country 1, Region 2, City 1")
-            expected = {c1_id, c1r1_id, c1r1c1_id, c1r1c2_id, c1r2_id, c1r2c1_id}
-
-        page_size = 3
-        all_ids = []
-        page_token = None
-        with communities_session(token) as api:
-            for _ in range(20):
-                req = communities_pb2.SearchCommunitiesReq(
-                    query="Country 1", page_size=page_size, page_token=page_token
-                )
-                res = api.SearchCommunities(req)
-                ids = [c.community_id for c in res.communities]
-
-                assert len(ids) <= page_size
-                assert len(ids) == len(set(ids))
-
-                all_ids.extend(ids)
-
-                if not res.next_page_token:
-                    break
-                page_token = res.next_page_token
-
-        assert expected.issubset(set(all_ids))
-        assert c1_id in all_ids
-
-    def test_invalid_page_token_aborts(self):
-        with session_scope() as session:
-            _, token = get_user_id_and_token(session, "user1")
+            region_id = get_community_id(session, "Country 1, Region 1")
+            city_id = get_community_id(session, "Country 1, Region 1, City 1")
 
         with communities_session(token) as api:
-            with pytest.raises(grpc.RpcError) as err:
-                api.SearchCommunities(
-                    communities_pb2.SearchCommunitiesReq(query="Country 1", page_size=2, page_token="not-a-token")
-                )
-            assert err.value.code() == grpc.StatusCode.INVALID_ARGUMENT
-            assert err.value.details() == "invalid_page_token"
+            res = api.SearchCommunities(communities_pb2.SearchCommunitiesReq(query="Country 1, Region", page_size=5))
+            ids = [c.community_id for c in res.communities]
+
+            assert region_id in ids
+            assert city_id in ids
+            assert ids.index(region_id) < ids.index(city_id)
 
     def test_no_results_returns_empty(self):
         """
