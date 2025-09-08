@@ -248,10 +248,10 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.27.1"
 
-"@babel/runtime@^7.12.5", "@babel/runtime@^7.18.3", "@babel/runtime@^7.20.13", "@babel/runtime@^7.22.5", "@babel/runtime@^7.23.2", "@babel/runtime@^7.28.2", "@babel/runtime@^7.5.5", "@babel/runtime@^7.8.7":
-  version "7.28.3"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.28.3.tgz#75c5034b55ba868121668be5d5bb31cc64e6e61a"
-  integrity sha512-9uIQ10o0WGdpP6GDhXcdOJPJuDgFtIDtN/9+ArJQ2NAfAmiuhTQdzkaTGR33v43GYS2UrSA0eX2pPPHoFVvpxA==
+"@babel/runtime@^7.12.5", "@babel/runtime@^7.18.3", "@babel/runtime@^7.20.13", "@babel/runtime@^7.22.5", "@babel/runtime@^7.23.2", "@babel/runtime@^7.28.2", "@babel/runtime@^7.28.3", "@babel/runtime@^7.5.5", "@babel/runtime@^7.8.7":
+  version "7.28.4"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.28.4.tgz#a70226016fabe25c5783b2f22d3e1c9bc5ca3326"
+  integrity sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==
 
 "@babel/template@^7.27.2", "@babel/template@^7.3.3":
   version "7.27.2"
@@ -1076,20 +1076,20 @@
     csstype "^3.1.3"
     prop-types "^15.8.1"
 
-"@mui/types@^7.4.5":
-  version "7.4.5"
-  resolved "https://registry.yarnpkg.com/@mui/types/-/types-7.4.5.tgz#97533ac6f95498820e1331c6b961b7acc04e91d7"
-  integrity sha512-ZPwlAOE3e8C0piCKbaabwrqZbW4QvWz0uapVPWya7fYj6PeDkl5sSJmomT7wjOcZGPB48G/a6Ubidqreptxz4g==
+"@mui/types@^7.4.5", "@mui/types@^7.4.6":
+  version "7.4.6"
+  resolved "https://registry.yarnpkg.com/@mui/types/-/types-7.4.6.tgz#1432e0814cf155287283f6bbd1e95976a148ef07"
+  integrity sha512-NVBbIw+4CDMMppNamVxyTccNv0WxtDb7motWDlMeSC8Oy95saj1TIZMGynPpFLePt3yOD8TskzumeqORCgRGWw==
   dependencies:
-    "@babel/runtime" "^7.28.2"
+    "@babel/runtime" "^7.28.3"
 
-"@mui/utils@^7.3.1":
-  version "7.3.1"
-  resolved "https://registry.yarnpkg.com/@mui/utils/-/utils-7.3.1.tgz#6be110e7a0bb805815873d581abeb1bebc6a2eb9"
-  integrity sha512-/31y4wZqVWa0jzMnzo6JPjxwP6xXy4P3+iLbosFg/mJQowL1KIou0LC+lquWW60FKVbKz5ZUWBg2H3jausa0pw==
+"@mui/utils@^7.3.1", "@mui/utils@^7.3.2":
+  version "7.3.2"
+  resolved "https://registry.yarnpkg.com/@mui/utils/-/utils-7.3.2.tgz#361775d72c557a03115150e8aec4329c7ef14563"
+  integrity sha512-4DMWQGenOdLnM3y/SdFQFwKsCLM+mqxzvoWp9+x2XdEzXapkznauHLiXtSohHs/mc0+5/9UACt1GdugCX2te5g==
   dependencies:
-    "@babel/runtime" "^7.28.2"
-    "@mui/types" "^7.4.5"
+    "@babel/runtime" "^7.28.3"
+    "@mui/types" "^7.4.6"
     "@types/prop-types" "^15.7.15"
     clsx "^2.1.1"
     prop-types "^15.8.1"
@@ -4825,7 +4825,7 @@ get-value@^2.0.2, get-value@^2.0.6:
   resolved "https://registry.yarnpkg.com/get-value/-/get-value-2.0.6.tgz#dc15ca1c672387ca76bd37ac0a395ba2042a2c28"
   integrity sha512-Ln0UQDlxH1BapMu3GPtf7CuYNwRZf2gwCuPqbyG6pB8WfmFpzqcy4xtAaAMUhnNqjMKTiCPZG2oMT3YSx8U2NA==
 
-gl-matrix@^3.4.3:
+gl-matrix@^3.4.4:
   version "3.4.4"
   resolved "https://registry.yarnpkg.com/gl-matrix/-/gl-matrix-3.4.4.tgz#7789ee4982f62c7a7af447ee488f3bd6b0c77003"
   integrity sha512-latSnyDNt/8zYUB6VIJ6PCh2jBjJX6gnDsoCZ7LyW7GkqrD51EWwa9qCoGixj8YqBtETQK/xY7OmpTF8xz1DdQ==
@@ -4934,10 +4934,10 @@ graphql@^16.8.1:
   resolved "https://registry.yarnpkg.com/graphql/-/graphql-16.11.0.tgz#96d17f66370678027fdf59b2d4c20b4efaa8a633"
   integrity sha512-mS1lbMsxgQj6hge1XZ6p7GPhbrtFwUFYi3wRzXAC/FmYnyXMTvvI3td3rjmQ2u8ewXueaSvRPWaEcgVVOT9Jnw==
 
-grpc-web@2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/grpc-web/-/grpc-web-2.0.0.tgz#0c28e4d6498e335089983d6f0d83d273f89bc303"
-  integrity sha512-DVt8qfQ+tyV2h4PNfehw/k5h0tOOaCwiWwDFOSCj5TLLEk93q0VTd8TcaibtBFMK/mkOKDKssvYH+prWmclwFg==
+grpc-web@2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/grpc-web/-/grpc-web-2.0.1.tgz#42ee41dd60d735b08342fbdbd8e0688d79552a97"
+  integrity sha512-jo5b5HKDUlBrCgs0SKleMwQGgYOX0Lhhb4OGyTcVCR1/68IbG4tc/N2RBT6qLNxukeGlebyYGpA9I1dN6HFivQ==
 
 gzip-size@^6.0.0:
   version "6.0.0"
@@ -6277,10 +6277,10 @@ makeerror@1.0.12:
   dependencies:
     tmpl "1.0.5"
 
-maplibre-gl@^5.6.1:
-  version "5.6.2"
-  resolved "https://registry.yarnpkg.com/maplibre-gl/-/maplibre-gl-5.6.2.tgz#eda90691658e76e8c92576b008bdefd22c535dd7"
-  integrity sha512-SEqYThhUCFf6Lm0TckpgpKnto5u4JsdPYdFJb6g12VtuaFsm3nYdBO+fOmnUYddc8dXihgoGnuXvPPooUcRv5w==
+maplibre-gl@^5.7.1:
+  version "5.7.1"
+  resolved "https://registry.yarnpkg.com/maplibre-gl/-/maplibre-gl-5.7.1.tgz#ad6f2d7f6bfcf4617058360f063b992536980548"
+  integrity sha512-iCOQB6W/EGgQx8aU4SyfU5a5/GR2E+ELF92NMsqYfs3x+vnY+8mARmz4gor6XZHCz3tv19mnotVDRlRTMNKyGw==
   dependencies:
     "@mapbox/geojson-rewind" "^0.5.2"
     "@mapbox/jsonlint-lines-primitives" "^2.0.2"
@@ -6296,7 +6296,7 @@ maplibre-gl@^5.6.1:
     "@types/supercluster" "^7.1.3"
     earcut "^3.0.2"
     geojson-vt "^4.0.2"
-    gl-matrix "^3.4.3"
+    gl-matrix "^3.4.4"
     kdbush "^4.0.2"
     murmurhash-js "^1.0.0"
     pbf "^4.0.1"
