@@ -159,8 +159,9 @@ message GetAccountInfoRes {
 
   ProfilePublicVisibility profile_public_visibility = 17;
 
-  HeardAboutUs.Source source = 19;
-  HeardAboutUs other_source = 20;
+  string heard_about_us_source = 20;
+  bool have_you_couchsurfed_before = 21;
+  GetOutofCouchers what_you_want_to_get_out_of_couchers = 22;
 
   bool is_volunteer = 18;
 }

@@ -93,17 +93,10 @@ class ParkingDetails(enum.Enum):
     paid_onsite = enum.auto()
     paid_offsite = enum.auto()
 
-
-class HeardAboutUs(enum.Enum):
-    source_friend = 1
-    source_social_media = 2
-    source_search_engine = 3
-    source_other = 4
-    source_event = 5
-    source_couchsurfing = 6
-    source_other_hosting_platform = 7
-    source_news_article = 8
-    source_advertisement = 9
+class GetOutofCouchers(enum.Enum):
+    host= enum.auto()
+    surf= enum.auto()
+    events= enum.auto()
 
 
 class ProfilePublicVisibility(enum.Enum):
@@ -179,13 +172,6 @@ class User(Base):
     joined = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     last_active = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
-    heard_about_us_source = Column(
-        Enum(HeardAboutUs),
-        server_default=text("'source_friend'"),  # Use the string representation of the Enum value
-        nullable=True,
-    )
-    heard_about_us_source_other = Column(String, nullable=True, server_default=text("''"))
-
     public_visibility = Column(Enum(ProfilePublicVisibility), nullable=False, server_default="map_only")
     has_modified_public_visibility = Column(Boolean, nullable=False, server_default=expression.false())
 
@@ -193,6 +179,10 @@ class User(Base):
     last_notified_message_id = Column(BigInteger, nullable=False, default=0)
     # same as above for host requests
     last_notified_request_message_id = Column(BigInteger, nullable=False, server_default=text("0"))
+    heard_about_us_source = Column(String, nullable=True)
+    what_you_want_to_get_out_of_couchers = Column(GetOutofCouchers, nullable=True)
+    have_you_couchsurfed_before = Column(Boolean, nullable=True)
+
 
     # display name
     name = Column(String, nullable=False)
